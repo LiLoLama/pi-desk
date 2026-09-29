@@ -1,0 +1,57 @@
+import {spawn} from 'node:child_process';import {mkdtemp,mkdir,writeFile,readFile,rm} from 'node:fs/promises';import os from 'node:os';import path from 'node:path';import assert from 'node:assert/strict';import {fileURLToPath} from 'node:url';
+const tmp=await mkdtemp(path.join(os.tmpdir(),'pi-desk-http-')),project=path.join(tmp,'project');await mkdir(project);await writeFile(path.join(project,'test.txt'),'Kontext');let origin;let server,cookie;
+async function start(){server=spawn(process.execPath,[fileURLToPath(new URL('../server.mjs',import.meta.url))],{env:{...process.env,PI_DESK_PORT:'0',PI_DESK_DATA:path.join(tmp,'data')},stdio:['ignore','pipe','pipe']});await new Promise((resolve,reject)=>{const t=setTimeout(()=>reject(Error('Server startup timed out')),15000);server.stdout.once('data',chunk=>{origin=String(chunk).trim().replace('Pi Desk ','');clearTimeout(t);resolve();});server.once('exit',c=>{clearTimeout(t);reject(Error('Server exit '+c));});});cookie=(await fetch(origin)).headers.get('set-cookie').split(';')[0];}
+async function stop(){await new Promise(resolve=>{server.once('exit',resolve);server.kill('SIGTERM');});}
+async function api(route,body){const r=await fetch(origin+'/api/'+route,{method:body?'POST':'GET',headers:{cookie,...(body?{'Content-Type':'application/json','X-Pi-Desk':'1',Origin:origin}:{})},body:body?JSON.stringify(body):undefined});const json=await r.json();assert.equal(r.status,200,JSON.stringify(json));return json;}
+try{await start();assert.equal((await fetch(origin+'/api/state')).status,403);assert.equal((await fetch(origin+'/api/projects',{method:'POST',headers:{cookie,'Content-Type':'application/json'},body:'{}'})).status,403);assert.equal((await fetch(origin+'/api/projects',{headers:{cookie}})).status,405);assert.equal((await fetch(origin+'/runtime/omp')).status,404);console.log('PASS: unauthorized, cross-origin/mutation and runtime access blocked');const p=await api('projects',{path:project}),t=await api('tasks',{projectId:p.id});let session=await api('session?taskId='+t.id);assert.equal(session.task.mode,'always-ask');assert.equal((await api('file?projectId='+p.id+'&path=test.txt')).text,'Kontext');assert.equal((await api('auth')).providers.some(p=>p.id==='openai-codex'),true);await api('mode',{taskId:t.id,mode:'write'});await api('rename',{taskId:t.id,title:'Persistent title'});await stop();await start();const state=await api('state');assert.equal(state.tasks[0].title,'Persistent title');assert.equal(state.tasks[0].mode,'write');session=await api('session?taskId='+t.id);assert.equal(session.messages.length,0);
+assert.ok(session.runtime);
+assert.ok(Array.isArray(session.todos));
+assert.ok(Array.isArray(session.subagents));
+const stats=await api('stats?taskId='+t.id);
+assert.equal(typeof stats,'object');
+const commands=await api('commands?taskId='+t.id);
+assert.ok(Array.isArray(commands.commands));
+assert.equal((await fetch(origin+'/api/stats?taskId='+t.id,{method:'POST',headers:{cookie,'Content-Type':'application/json','X-Pi-Desk':'1',Origin:origin},body:'{}'})).status,405);
+const rules=await api('rules?projectId='+p.id);
+assert.ok(Array.isArray(rules.files));
+assert.ok(rules.files.some(f=>f.name==='AGENTS.md'));
+await api('rules',{projectId:p.id,name:'AGENTS.md',text:'Pi Desk Regel.'});
+assert.equal((await api('rules?projectId='+p.id)).files.find(f=>f.name==='AGENTS.md').text,'Pi Desk Regel.');
+const pluginDir=path.join(tmp,'plug');await mkdir(pluginDir);await writeFile(path.join(pluginDir,'package.json'),JSON.stringify({name:'desk-http-plug',version:'1.0.0'}));
+const plugged=await api('capabilities/plugin-add',{path:pluginDir});
+assert.equal(plugged.plugins[0].enabled,false);
+await api('capabilities/plugin-state',{id:plugged.plugins[0].id,enabled:true});
+assert.equal((await api('capabilities')).plugins[0].enabled,true);
+const hook=path.join(tmp,'hook.js');await writeFile(hook,'export default {};\n');
+const hooked=await api('capabilities/hook-add',{path:hook});
+assert.equal(hooked.hooks[0].enabled,false);
+console.log('PASS: project, context, providers, policy restart and server recovery');
+const sessionFile=session.task.sessionFile;
+await api('task-state',{taskId:t.id,action:'archive'});
+assert.ok((await api('state')).tasks.find(x=>x.id===t.id).archivedAt);
+const archivedRead=await fetch(origin+'/api/session?taskId='+t.id,{headers:{cookie}});
+assert.equal(archivedRead.status,400);
+await stop();await start();
+assert.ok((await api('state')).tasks.find(x=>x.id===t.id).archivedAt);
+await api('task-state',{taskId:t.id,action:'restore'});
+assert.equal((await api('state')).tasks.find(x=>x.id===t.id).archivedAt,undefined);
+assert.equal((await api('session?taskId='+t.id)).task.sessionFile,sessionFile);
+await api('task-state',{taskId:t.id,action:'trash'});
+await stop();await start();
+assert.ok((await api('state')).tasks.find(x=>x.id===t.id).deletedAt);
+assert.equal(await readFile(path.join(project,'test.txt'),'utf8'),'Kontext');
+await api('task-state',{taskId:t.id,action:'restore'});
+assert.equal((await api('session?taskId='+t.id)).task.sessionFile,sessionFile);
+const notTrash=await fetch(origin+'/api/task-state',{method:'POST',headers:{cookie,'Content-Type':'application/json','X-Pi-Desk':'1',Origin:origin},body:JSON.stringify({taskId:t.id,action:'purge'})});
+assert.equal(notTrash.status,400);
+await api('task-state',{taskId:t.id,action:'trash'});
+const extra=await api('tasks',{projectId:p.id});
+await api('task-state',{taskId:extra.id,action:'trash'});
+await api('task-state',{taskId:t.id,action:'purge'});
+assert.equal((await api('state')).tasks.some(x=>x.id===t.id),false);
+await api('task-state',{action:'empty'});
+assert.equal((await api('state')).tasks.filter(x=>x.deletedAt).length,0);
+const invalid=await fetch(origin+'/api/task-state',{method:'POST',headers:{cookie,'Content-Type':'application/json','X-Pi-Desk':'1',Origin:origin},body:JSON.stringify({taskId:extra.id,action:'vanish'})});
+assert.equal(invalid.status,400);
+console.log('PASS: archive/trash survive restart; restore retains session; project files untouched; purge/empty remove chats');
+}finally{if(server&&server.exitCode===null)await stop();await rm(tmp,{recursive:true,force:true});}

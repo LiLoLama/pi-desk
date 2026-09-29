@@ -1,0 +1,4 @@
+import {mkdir,writeFile,rename,chmod} from 'node:fs/promises';import {createHash} from 'node:crypto';import {fileURLToPath} from 'node:url';
+if(process.platform!=='darwin'||process.arch!=='arm64')throw Error('Diese erste Version unterstützt macOS Apple Silicon.');
+const dir=fileURLToPath(new URL('./runtime/',import.meta.url));await mkdir(dir,{recursive:true});
+const r=await fetch('https://github.com/can1357/oh-my-pi/releases/download/v18.2.1/omp-darwin-arm64');if(!r.ok)throw Error(`Download fehlgeschlagen: ${r.status}`);const b=Buffer.from(await r.arrayBuffer());if(createHash('sha256').update(b).digest('hex')!=='ac673868a1598b4beda98dc6ce2148f24afabc42816c702b2dac5f79f0d861de')throw Error('Runtime-Prüfsumme stimmt nicht überein.');await writeFile(dir+'omp.download',b,{mode:0o755});await rename(dir+'omp.download',dir+'omp');await chmod(dir+'omp',0o755);console.log('OMP 18.2.1 installiert und geprüft.');

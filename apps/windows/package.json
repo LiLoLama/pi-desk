@@ -1,0 +1,97 @@
+{
+  "name": "pi-desk-windows",
+  "version": "0.2.0",
+  "description": "Pi Desk für Windows – lokale Desktop-Oberfläche für Oh My Pi",
+  "private": true,
+  "type": "module",
+  "main": "desktop/main.cjs",
+  "author": "Liam Schmid",
+  "scripts": {
+    "start": "electron .",
+    "dev:server": "node server.mjs",
+    "runtime:win": "node scripts/install-runtime.mjs",
+    "test": "node --test test/core.test.mjs test/settings.test.mjs test/capabilities.test.mjs test/local-models.test.mjs test/windows.test.mjs test/parity.test.mjs",
+    "test:host": "node test/native-host.mjs",
+    "build:win": "npm run runtime:win && electron-builder --win zip --x64",
+    "build:installer": "npm run runtime:win && electron-builder --win nsis --x64",
+    "test:desktop": "electron test/desktop-smoke.cjs",
+    "test:runtime": "node test/runtime-smoke.mjs",
+    "test:http": "node test/http-smoke.mjs",
+    "test:parity": "node test/parity-http.mjs",
+    "test:desktop-parity": "electron test/desktop-parity.cjs"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "dependencies": {
+    "dompurify": "3.4.16",
+    "marked": "18.0.14",
+    "yaml": "2.8.2"
+  },
+  "devDependencies": {
+    "electron": "44.4.5",
+    "electron-builder": "26.15.3"
+  },
+  "build": {
+    "appId": "com.inthezone.pidesk.windows",
+    "productName": "Pi Desk",
+    "asar": true,
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "*.mjs",
+      "public/**",
+      "desktop/**",
+      "package.json",
+      "!install-runtime.mjs"
+    ],
+    "extraResources": [
+      {
+        "from": "runtime/win32-x64",
+        "to": "runtime",
+        "filter": [
+          "omp.exe"
+        ]
+      },
+      {
+        "from": "licenses",
+        "to": "licenses"
+      }
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "zip",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "artifactName": "Pi-Desk-${version}-Windows-${arch}.${ext}",
+      "signExecutable": false,
+      "icon": "build/icon.png"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "artifactName": "Pi-Desk-${version}-Windows-${arch}-Setup.${ext}"
+    },
+    "extraFiles": [
+      {
+        "from": "build/START.txt",
+        "to": "START.txt"
+      },
+      {
+        "from": "WINDOWS-TESTPLAN.md",
+        "to": "WINDOWS-TESTPLAN.md"
+      },
+      {
+        "from": "README.md",
+        "to": "README-WINDOWS.md"
+      }
+    ]
+  }
+}

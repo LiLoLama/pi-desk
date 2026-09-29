@@ -1,0 +1,155 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-09-16T13:36:32.476540+00:00",
+  "title": "Design System: Pi Desk · Quiet Studio Dark",
+  "extensions": {
+    "shadows": [
+      {
+        "name": "composer",
+        "value": "0 12px 32px -12px #0009, inset 0 1px 0 #dce4df29, inset 0 -1px 0 #0004",
+        "purpose": "Composer"
+      },
+      {
+        "name": "popover",
+        "value": "0 16px 50px #0007, inset 0 1px 0 #ffffff20",
+        "purpose": "Temporäres Menü"
+      },
+      {
+        "name": "search",
+        "value": "0 25px 100px #0009",
+        "purpose": "Suchdialog"
+      },
+      {
+        "name": "mobile-sidebar",
+        "value": "10px 0 60px #0008",
+        "purpose": "Mobile Navigation"
+      }
+    ],
+    "motion": [
+      {
+        "name": "easing",
+        "value": "cubic-bezier(.16,1,.3,1)"
+      },
+      {
+        "name": "send-light",
+        "value": "620ms, once per sent message, 1px composer edge"
+      },
+      {
+        "name": "message",
+        "value": "420ms, new message only, user 24px / assistant 12px"
+      },
+      {
+        "name": "popover",
+        "value": "280ms origin at trigger, scale .955 to 1, max blur 2px"
+      },
+      {
+        "name": "inspector",
+        "value": "300ms, translateX 10px to 0"
+      },
+      {
+        "name": "task",
+        "value": "250ms, translateY 7px to 0"
+      },
+      {
+        "name": "chip",
+        "value": "260ms, scale .94 to 1"
+      },
+      {
+        "name": "layout",
+        "value": "330ms transform-only FLIP"
+      },
+      {
+        "name": "reduced-motion",
+        "value": "80ms opacity, no spatial motion or light sweep"
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "mobile",
+        "value": "600px"
+      },
+      {
+        "name": "single-pane",
+        "value": "900px"
+      },
+      {
+        "name": "compact-desktop",
+        "value": "1150px"
+      },
+      {
+        "name": "wide",
+        "value": "1600px"
+      }
+    ],
+    "conversation": {
+      "user": "right-aligned graphite bubble, 16px radius with 5px bottom-right corner",
+      "assistant": "left-aligned unframed text, no visible role labels",
+      "context": "composer-anchored multiselect with removable chips",
+      "permissions": "per-task demo profile: ask, workspace, full",
+      "composerEdge": "1px directional warm/sage silver highlight",
+      "scrolling": "main min-height:0, chat min-height:0, composer flex-shrink:0"
+    }
+  },
+  "components": [
+    {
+      "name": "Icon-Aktion",
+      "kind": "button",
+      "description": "Icon-Aktion aus dem lokalen Mockup.",
+      "html": "<button class=\"ds-icon\" aria-label=\"Aktion\"><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\" width=\"19\" height=\"19\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.55\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M12 20V4m-6 6 6-6 6 6\"/></svg></button>",
+      "css": ".ds-icon{width:34px;height:34px;display:inline-flex;align-items:center;justify-content:center;border:0;border-radius:8px;background:none;color:var(--muted,#a5a8a8);cursor:pointer;transition:background .16s ease,color .16s ease}.ds-icon:hover{background:var(--hover,#ffffff09);color:var(--fg,#eeeFEB)}.ds-icon:focus-visible{outline:2px solid var(--green,#abc7a8);outline-offset:4px}",
+      "refersTo": "button-icon"
+    },
+    {
+      "name": "Senden",
+      "kind": "button",
+      "description": "Senden aus dem lokalen Mockup.",
+      "html": "<button class=\"ds-send\" aria-label=\"Demo-Nachricht senden\"><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\" width=\"19\" height=\"19\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.55\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M12 20V4m-6 6 6-6 6 6\"/></svg></button>",
+      "css": ".ds-send{width:31px;height:31px;display:inline-flex;align-items:center;justify-content:center;border:0;border-radius:50%;background:#e7e9e5;color:#242727;cursor:pointer;transition:background .16s ease}.ds-send:hover{background:white}.ds-send:disabled{opacity:.36;cursor:default}.ds-send:focus-visible{outline:2px solid var(--green,#abc7a8);outline-offset:4px}",
+      "refersTo": "button-send"
+    },
+    {
+      "name": "Aufgabennavigation",
+      "kind": "nav",
+      "description": "Aufgabennavigation aus dem lokalen Mockup.",
+      "html": "<nav aria-label=\"Aufgaben\"><button class=\"ds-task\" aria-current=\"page\">Buchungsflow</button></nav>",
+      "css": ".ds-task{font-family:-apple-system,BlinkMacSystemFont,\"Segoe UI\",sans-serif;display:block;width:100%;text-align:left;padding:8px 11px;border:0;border-radius:7px;font-size:12px;background:var(--selected,#ffffff0d);color:var(--fg,#eeeFEB);cursor:pointer;transition:background .16s ease}.ds-task:hover{background:var(--hover,#ffffff09)}.ds-task:focus-visible{outline:2px solid var(--green,#abc7a8);outline-offset:4px}",
+      "refersTo": "navigation-task-active"
+    },
+    {
+      "name": "Composer",
+      "kind": "input",
+      "description": "Composer aus dem lokalen Mockup.",
+      "html": "<div class=\"ds-composer\"><textarea class=\"ds-prompt\" aria-label=\"Nachricht an den Demo-Agenten\" placeholder=\"Was möchtest du ändern?\"></textarea></div>",
+      "css": ".ds-composer{border-radius:17px;background:linear-gradient(150deg,#393e40e8,#2d3234ed 46%,#2b2e30f5);box-shadow:0 12px 32px -12px #0009,inset 0 1px 0 #dce4df29,inset 0 -1px 0 #0004;backdrop-filter:blur(18px);padding:14px 14px 11px}.ds-composer:focus-within{box-shadow:0 8px 28px #0002,inset 0 0 0 1px #b5c5bf66}.ds-prompt{font-family:-apple-system,BlinkMacSystemFont,\"Segoe UI\",sans-serif;resize:none;width:100%;border:0;background:none;color:var(--fg,#eeeFEB);outline:none!important;min-height:46px;line-height:1.6;font-size:13px;padding:2px 4px}.ds-prompt::placeholder{color:#adafb0}.ds-prompt:focus-visible{outline:2px solid var(--green,#abc7a8);outline-offset:4px}"
+    },
+    {
+      "name": "Dateizeile",
+      "kind": "custom",
+      "description": "Dateizeile aus dem lokalen Mockup.",
+      "html": "<button class=\"ds-file\">booking.tsx <span>+38</span></button>",
+      "css": ".ds-file{font-family:-apple-system,BlinkMacSystemFont,\"Segoe UI\",sans-serif;display:flex;gap:10px;width:100%;text-align:left;padding:8px 0;font-size:11px;border:0;border-radius:4px;background:none;color:var(--muted,#a5a8a8);cursor:pointer;transition:background .16s ease}.ds-file span{margin-left:auto;font:10px/1.5 ui-monospace,SFMono-Regular,monospace;color:var(--green,#abc7a8)}.ds-file:hover{background:var(--hover,#ffffff09)}.ds-file:focus-visible{outline:2px solid var(--green,#abc7a8);outline-offset:4px}"
+    }
+  ],
+  "narrative": {
+    "northStar": "Quiet Studio Dark",
+    "overview": "Bestätigte Richtung aus der Unterhaltung vom 16.09.2026. Referenz: ../pi-desk-designs/06-quiet-studio-dark.png. Die spätere Nutzerkorrektur hat Vorrang: Container konsequent reduzieren, keine neue Bildgenerierung.",
+    "keyCharacteristics": [
+      "- Drei Flächen: schmale Projektnavigation, freies Gespräch, zuschaltbares Ergebnis.",
+      "- Warmes Graphit, leicht abgesetzte Navigation, cremeweißes Primärtext, Salbei ausschließlich für Status. Systemschrift passend zum Mac-Interface.",
+      "- Keine Chatblasen, keine Agentenkarten, keine umrahmten Dateilisten. Struktur durch Abstand und Ausrichtung. Einfassungen für Composer, Popover und Vorschau erlaubt.",
+      "- Icons in einheitlicher SVG-Linienstärke; jede Icon-Aktion besitzt zugänglichen Namen und Tooltip. Namen von Projekten, Dateien und Aufgaben bleiben Text.",
+      "- Glaswirkung nur an Composer und Popover, keine dekorativen Leuchteffekte.",
+      "- Tastaturfokus klar sichtbar. Weniger Bewegung bei prefers-reduced-motion."
+    ],
+    "rules": [],
+    "dos": [
+      "Do Raum, Ausrichtung, Typografie und feine Trennlinien zur Gliederung verwenden.",
+      "Do Projekt-, Aufgaben- und Dateinamen als Text erhalten und Icon-Aktionen zugänglich benennen.",
+      "Do Beispielzustände als lokale Demo kenntlich machen."
+    ],
+    "donts": [
+      "Don't Boxen in Boxen, Chatblasen, Agentenkarten oder umrahmte Dateilisten ergänzen.",
+      "Don't neue Bilder, dekorative Leuchteffekte oder die Vorschau-Palette als App-Theme einführen."
+    ]
+  }
+}

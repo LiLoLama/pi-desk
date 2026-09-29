@@ -1,0 +1,32 @@
+[
+  {
+    "source": "/Users/liam/Library/CloudStorage/GoogleDrive-liam@inthezonestudios.com/Geteilte Ablagen/Studio Claude Workspace/output/pi-desk-app",
+    "destination": "/Users/liam/Developer/LIAM/pi-desk/apps/macos",
+    "files": 810,
+    "verified": true
+  },
+  {
+    "source": "/Users/liam/Library/CloudStorage/GoogleDrive-liam@inthezonestudios.com/Geteilte Ablagen/Studio Claude Workspace/output/pi-desk-windows",
+    "destination": "/Users/liam/Developer/LIAM/pi-desk/apps/windows",
+    "files": 8051,
+    "verified": true
+  },
+  {
+    "source": "/Users/liam/Library/CloudStorage/GoogleDrive-liam@inthezonestudios.com/Geteilte Ablagen/Studio Claude Workspace/output/pi-desk-designs",
+    "destination": "/Users/liam/Developer/LIAM/pi-desk/docs/design/explorations",
+    "files": 8,
+    "verified": true
+  },
+  {
+    "source": "/Users/liam/Library/CloudStorage/GoogleDrive-liam@inthezonestudios.com/Geteilte Ablagen/Studio Claude Workspace/output/pi-desk-mockup",
+    "destination": "/Users/liam/Developer/LIAM/pi-desk/docs/design/mockup",
+    "files": 11,
+    "verified": true
+  },
+  {
+    "source": "/Users/liam/Library/CloudStorage/GoogleDrive-liam@inthezonestudios.com/Geteilte Ablagen/Studio Claude Workspace/output/pi-desk-app.zip",
+    "destination": "/Users/liam/Developer/LIAM/pi-desk/archive/pi-desk-app-legacy.zip",
+    "sha256": "0774b3ddaf4aafdc8e0e1cfb7bd8a21c8b1d4dc2672d07cbfe11f94054b65088",
+    "verified": true
+  }
+]

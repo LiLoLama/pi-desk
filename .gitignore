@@ -1,0 +1,14 @@
+# Generated dependencies, runtime binaries and builds
+**/node_modules/
+**/runtime/
+**/dist/
+archive/
+.DS_Store
+*.log
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+# Local caches
+**/__pycache__/

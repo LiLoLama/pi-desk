@@ -2,6 +2,13 @@
 
 Desktop-Oberflächen für Oh My Pi: eine native macOS-App und eine Windows-App auf Electron-Basis.
 
+## Downloads
+
+- [Windows 0.2.0 – ZIP für x64](https://github.com/LiLoLama/pi-desk/releases/tag/windows-v0.2.0)
+- [macOS 0.1.0 – DMG für Apple Silicon](https://github.com/LiLoLama/pi-desk/releases/tag/macos-v0.1.0)
+
+Beide sind Vorabversionen. Windows ist noch nicht auf einem echten Windows-PC verifiziert; macOS ist ad-hoc signiert und nicht notarisiert. Hinweise und Prüfsummen stehen beim jeweiligen Release.
+
 ## Struktur
 
 - [apps/macos](apps/macos/README.md): SwiftUI/AppKit, Apple Silicon, macOS 14+.
@@ -44,6 +51,6 @@ PI_DESK_OMP="$PWD/../macos/runtime/omp" npm start
 
 Build-Ergebnisse bleiben in `apps/macos/dist` bzw. `apps/windows/dist`. Abhängigkeiten, Runtime-Binaries und Builds sind lokal vorhanden, aber von Git ausgeschlossen. Für GitHub werden fertige Pakete als Release-Anhänge veröffentlicht, nicht als Quelldateien eingecheckt.
 
-Vorhanden: Windows-ZIP 0.2.0, Mac-App und ein älteres Mac-DMG. Das DMG ist älter als die vorhandene Mac-App und darf nicht als frisch geprüfter Build ausgegeben werden. Der tatsächliche Windows-Lauf bleibt offen; siehe Windows-Testplan.
+Die Release-Pakete werden getrennt pro Plattform angeboten. Der Mac-Build wurde für den Release am 29.09.2026 neu kompiliert und paketiert; Windows wurde aus dem aktuellen Repository neu paketiert. Die plattformspezifischen Prüfberichte und Release-Hinweise benennen die verbleibenden Grenzen.
 
-Das Projekt liegt im privaten GitHub-Repository [LiLoLama/pi-desk](https://github.com/LiLoLama/pi-desk), eingerichtet am 29.09.2026. Zugriff erhalten nur ausdrücklich eingeladene Personen. Fertige GitHub-Releases wurden noch nicht angelegt; Release-Veröffentlichung und Lizenzwahl bleiben separate Schritte. Vorhandene Drittanbieter-Lizenzhinweise bleiben erhalten.
+Das Repository [LiLoLama/pi-desk](https://github.com/LiLoLama/pi-desk) ist seit 29.09.2026 öffentlich. Drittanbieter-Lizenzhinweise bleiben erhalten. Für den eigenen Pi-Desk-Code ist noch keine allgemeine Open-Source-Lizenz festgelegt; öffentlich sichtbar bedeutet nicht automatisch frei lizenziert.

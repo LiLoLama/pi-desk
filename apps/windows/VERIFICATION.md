@@ -32,3 +32,7 @@ Das fertige ZIP wurde vollständig mit CRC geprüft. Beide EXE-Dateien tragen AM
 - Größe: 259.907.093 Bytes (ca. 260 MB)
 - SHA-256: `c2a2af6fff2b6089fae95ce8812182255bdb0eb204168b03d08cdac2a50ff549`
 - Prüfsummen: `dist/SHA256SUMS.txt`
+
+## Release-Paket vom 29.09.2026
+
+Neu gebaut: `Pi-Desk-0.2.0-Windows-x64.zip` (259907090 Bytes). SHA-256: `49cfbc557a479b59d23ec8a4c9b16190301aeb129de899b51cddc6d74523660a`. 13 Tests, ZIP-CRC, beide x64-PE-Header, OMP-Prüfsumme und 21 verpackte Quelldateien geprüft. Windows-Lauf weiterhin offen.

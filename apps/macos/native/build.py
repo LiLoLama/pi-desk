@@ -64,6 +64,7 @@ shutil.copytree(root/'node_modules'/'yaml',host/'node_modules'/'yaml',dirs_exist
 shutil.copytree(root/'runtime',host/'runtime',dirs_exist_ok=True)
 # Browser assets remain available only to authenticated native requests, not used for native UI.
 shutil.copytree(root/'public',host/'public',dirs_exist_ok=True)
+shutil.copytree(root/'licenses',resources/'licenses',dirs_exist_ok=True)
 iconset=root/'dist'/'AppIcon.iconset';iconset.mkdir(exist_ok=True)
 subprocess.run(['swift','-module-cache-path','/private/tmp/pi-desk-swift-cache',str(root/'native'/'Icon.swift'),str(iconset)],check=True)
 subprocess.run(['iconutil','-c','icns',str(iconset),'-o',str(resources/'AppIcon.icns')],check=True)

@@ -138,3 +138,7 @@ node test/local-download-smoke.mjs
 node test/gguf-engine-smoke.mjs
 node test/local-engine-smoke.mjs /absoluter/pfad/zu/einem/MLX-Modell
 ```
+
+## GitHub-Download
+
+[macOS-Vorabversion 0.1.0](https://github.com/LiLoLama/pi-desk/releases/tag/macos-v0.1.0): am 29.09.2026 neu gebautes DMG für Apple Silicon. Ad-hoc signiert, nicht notarisiert. Drittanbieter-Lizenzen liegen im App-Paket und auf dem DMG.

@@ -99,3 +99,7 @@ Removed macOS shared toolbar capsules and the persistent sidebar search field. V
 - Native isolated acceptance used `PI_DESK_UI_TEST`, the deterministic local model fixture and `/private/tmp/pi-desk-native-e2e`. Choosing “Für diesen Chat immer erlauben” created the fixture file, completed the streamed response, collapsed the completed write into one work row and persisted only `write` under `approvalRules.chat.v1.native-task`.
 - Remembered approvals also answer requests from background tasks. A rule is stored only after the approval response succeeds. Provider safety prompts and generic confirmations cannot produce a remembered key. Settings exposes the total and clears chat/global rules.
 - `node --test test/*.test.mjs`: 6/6 passed. Final arm64 app build and local signature step passed. No external model request or production file mutation was used for this acceptance.
+
+## Release-Paket vom 29.09.2026
+
+Neu gebaut: `Pi-Desk-0.1.0-apple-silicon.dmg` (146612103 Bytes). SHA-256: `38c82f48d570f3e55c693ff128bdac89e8cc871c7e4ae8fab63625279fcc7f99`. 13 Tests, neuer nativer Build, strikte tiefe Signaturprüfung und DMG-Integritätsprüfung bestanden. Ad-hoc signiert, nicht notarisiert.

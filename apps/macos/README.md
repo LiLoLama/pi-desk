@@ -4,7 +4,7 @@ Lokale grafische Oberfläche für [Oh My Pi](https://github.com/can1357/oh-my-pi
 
 ## Native macOS-App
 
-Die fertige Anwendung liegt unter **`dist/Pi Desk.app`**. Zum Verschicken an einen anderen Apple-Silicon-Mac: **`dist/Pi-Desk-0.1.0-apple-silicon.dmg`**. Per Doppelklick starten; optional nach `Programme` verschieben. Node und OMP sind enthalten, ein Terminal oder Browserfenster wird für die Bedienung nicht benötigt. Die Oberfläche besteht aus **SwiftUI und AppKit**, ohne WebView/Electron.
+Die fertige Anwendung liegt unter **`dist/Pi Desk.app`**. Zum Verschicken an einen anderen Apple-Silicon-Mac: **`dist/Pi-Desk-0.2.0-apple-silicon.dmg`**. Per Doppelklick starten; optional nach `Programme` verschieben. Node und OMP sind enthalten, ein Terminal oder Browserfenster wird für die Bedienung nicht benötigt. Die Oberfläche besteht aus **SwiftUI und AppKit**, ohne WebView/Electron.
 
 Apple Silicon, Build-Ziel macOS 14 oder neuer; auf dem aktuellen Mac getestet. Die App ist lokal ad-hoc signiert. Ein Developer-ID-signiertes und notarisiertes Installationspaket für die Weitergabe ist noch nicht eingerichtet.
 
@@ -43,9 +43,9 @@ Die App startet keine kostenpflichtige Inferenz automatisch. Der vollständige L
 - OAuth-Anmeldung, dynamische Modellauswahl. Native Einstellungen über Zahnrad / ⌘,: Ollama, LM Studio und OpenAI-kompatible APIs hinzufügen, testen, bearbeiten und entfernen. Automatische Discovery oder manuelle Modell-IDs; optionaler API-Schlüssel.
 - Persönliche Agent-Hinweise und der Standard-Denkaufwand gelten global für Pi Desk. Am Composer gibt es bei unterstützten Modellen **Aufwand**; über **⋯** an der Aufgabe Komprimieren, Export, Handoff, Verzweigen, Fast-Mode und Befehle. Todos und Subagenten erscheinen im Chat. Schriftgröße, reduzierte Animationen und vier anpassbare Tastaturkürzel wirken nativ und bleiben gespeichert.
 - Kontextauswahl am Composer; oben Dateien oder Ordner über den macOS-Dialog, darunter der Projektbaum. Textdateien werden tatsächlich an die Nachricht angehängt. Bis 10 Dateien, je 250 KB, insgesamt 400 KB. Bilder aus der Zwischenablage mit **⌘V** anhängen (max. 4); sie erscheinen als Vorschau über dem Composer und gehen mit der Nachricht an OMP.
-- Chat-Nachrichten rendern Markdown nativ (Überschriften, Listen, Code, Tabellen, Links), ohne HTML oder WebView. Pfade und Dateilinks im Chat öffnen die Textvorschau rechts; Rechtsklick zeigt die Datei im Finder. Unter eigenen Nachrichten stehen Uhrzeit, Kopieren und Bearbeiten; unter Agent-Antworten Kopieren und „In neuem Chat fortfahren“.
+- Chat-Nachrichten rendern Markdown nativ (Überschriften, Listen, Code, Tabellen, Links), ohne HTML oder WebView. Pfade und Dateilinks im Chat öffnen die Textvorschau rechts; Rechtsklick zeigt die Datei im Finder. Vom Modell gelieferte Gedanken erscheinen als aufklappbarer „Gedanken des Modells“-Abschnitt; Modelle ohne solche Daten erzeugen keinen leeren Platzhalter. Nachrichtenaktionen sind sichtbar als Kopieren, Bearbeiten und Neuer Chat beschriftet.
 - Dateibaum und Textvorschau rechts. Git-Status und Diffs für staged/unstaged Änderungen, einschließlich Änderungen, die bereits vor dem Agentenlauf existierten. Neue untracked Dateien sind im Status und Dateibaum sichtbar. Im Dateibaum und in der Vorschau gibt es „Im Finder zeigen“.
-- Werkzeugergebnisse füllen den Chat nicht einzeln: während der Arbeit zeigt eine animierte, aufklappbare Statuszeile Laufzeit und bereits eingegangene Werkzeugergebnisse des aktuellen Durchlaufs; danach werden jeweils aufeinanderfolgende Werkzeugergebnisse zu einem kompakten, aufklappbaren Arbeitsblock zusammengefasst.
+- Werkzeugergebnisse füllen den Chat nicht einzeln: während der Arbeit zeigt eine standardmäßig geöffnete Statuszeile Laufzeit, aktuelle Modellgedanken und bereits eingegangene Werkzeugschritte mit verständlichen deutschen Namen und – sofern von OMP geliefert – ihrem Zweck. Danach werden aufeinanderfolgende Werkzeugergebnisse zu einem kompakten, aufklappbaren Arbeitsblock mit Details und Ausgabe zusammengefasst.
 - Echte Genehmigungsdialoge. Standard **Nachfragen**: Schreiben und Shell-Befehle bestätigen. **Dateien erlauben**: Schreiben erlauben, Shell bestätigen. **Vollzugriff**: beides automatisch. Zusätzlich kann ein angefragtes Werkzeug einmalig, für den aktuellen Chat oder global erlaubt werden. Dauerregeln gelten nur für das benannte Werkzeug, werden lokal gespeichert und unter **Einstellungen → Agent → Automatische Genehmigungen** zurückgesetzt. Anbieter-Sicherheitsprüfungen und generische Bestätigungen werden nie automatisch freigegeben. Moduswechsel startet den Agenten im Leerlauf mit derselben Sitzung neu.
 - Verbindungsabbrüche sichtbar; erneutes Laden rekonstruiert Chat und offene Genehmigungen, solange der Serverprozess lebt. Nach Serverneustart bleibt die gespeicherte Unterhaltung erhalten; laufende Generierungen werden nicht automatisch wiederholt.
 
@@ -53,7 +53,7 @@ Die App startet keine kostenpflichtige Inferenz automatisch. Der vollständige L
 
 Keine gerenderte Web-/Bildvorschau und kein integriertes Terminal. Todos und Subagenten erscheinen als native Leiste bzw. Liste, nicht als TUI-Karten. Vorschau zeigt Text/Quellcode. Markdown im Chat wird nativ als Text gesetzt, nicht als HTML ausgeführt. Neue Aufgaben benötigen zunächst eine Modellauswahl, wenn das Startmodell nicht zum angemeldeten Anbieter passt. Nicht jeder OMP-Login-Anbieter unterstützt den RPC-Login; entsprechende Fehler werden angezeigt.
 
-**Genehmigungen sind keine Sandbox.** OMP läuft mit den Rechten des lokalen Benutzers. Bestätigte Befehle und erlaubte Schreibwerkzeuge können auch außerhalb des Projektordners arbeiten. Der Dateibrowser/Kontextpicker selbst begrenzt Pfade einschließlich Symlinks auf den geöffneten Projektordner. Geladene Werkzeuge: read, write, edit, bash, grep, glob, ast_edit, ask, debug, eval, lsp, task, hub, todo, web_search. Unter **Einstellungen → Agent** lassen sich Browser-Use, Computer-Use, PTY, Advisor, Memory, Prewalk, Erweiterungen und Projekt-MCP schalten. Skills, MCP, lokale Plugins/Hooks und Projektregeln (AGENTS.md) haben eigene Einstellungsseiten.
+**Genehmigungen sind keine Sandbox.** OMP läuft mit den Rechten des lokalen Benutzers. Bestätigte Befehle und erlaubte Schreibwerkzeuge können auch außerhalb des Projektordners arbeiten. Der Dateibrowser/Kontextpicker selbst begrenzt Pfade einschließlich Symlinks auf den geöffneten Projektordner. Geladene Werkzeuge: read, write, edit, bash, grep, glob, ast_edit, ask, debug, eval, lsp, task, wait, todo, web_search. Unter **Einstellungen → Agent** lassen sich Browser-Use, Computer-Use, PTY, Advisor, Memory, Prewalk, Erweiterungen und Projekt-MCP schalten. Skills, MCP, lokale Plugins/Hooks und Projektregeln (AGENTS.md) haben eigene Einstellungsseiten.
 
 ## Daten und Sicherheit
 
@@ -63,10 +63,10 @@ Der Webserver bindet ausschließlich 127.0.0.1, validiert Host und Origin und ve
 
 ## Runtime
 
-Offizielle Release-Binärdatei **OMP 18.2.1**, `omp-darwin-arm64`:
-https://github.com/can1357/oh-my-pi/releases/tag/v18.2.1
+Offizielle Release-Binärdatei **OMP 18.4.10**, `omp-darwin-arm64`:
+https://github.com/can1357/oh-my-pi/releases/tag/v18.4.10
 
-SHA-256: `ac673868a1598b4beda98dc6ce2148f24afabc42816c702b2dac5f79f0d861de`
+SHA-256: `23d3f9ab712fe700e80a43dbd1e8159dfea8e106bf717648a49b1bba1ad3e508`
 
 `runtime/` ist gitignored. Nach erneutem Auschecken `node install-runtime.mjs` ausführen. Andere Plattformen sind noch nicht paketiert. Der Adapter verwendet **rpc-ui**, weil reguläres rpc die Werkzeug-Genehmigungsoberfläche nicht injiziert. Protocol v2 mit validierter Chunk-Rekonstruktion.
 
@@ -93,11 +93,11 @@ Der native Host-Test prüft den zufälligen Port, Token-Schutz, Doppelstart-Sper
 
 ## Einstellungen: Bestandsaufnahme
 
-[SETTINGS-AUDIT.md](SETTINGS-AUDIT.md) gleicht lokale Modelle, Skills, Plugins, Hooks, MCP, Browser, Personalisierung, Shortcuts und Worktrees mit OMP 18.2.1 ab und beschreibt die noch fehlende native Anbindung. Die Prüfung aktiviert keine zusätzlichen Funktionen.
+[SETTINGS-AUDIT.md](SETTINGS-AUDIT.md) dokumentiert die ursprüngliche Bestandsaufnahme gegen OMP 18.2.1; die für OMP 18.4.10 überarbeitete Laufzeit-, RPC- und Tool-Abdeckung steht in [FEATURE-PARITY.md](FEATURE-PARITY.md) und [VERIFICATION.md](VERIFICATION.md). Die Prüfung aktiviert keine zusätzlichen Funktionen.
 
 ## Vollständige OMP-Abdeckung
 
-[FEATURE-PARITY.md](FEATURE-PARITY.md) ist die verbindliche Arbeitsliste für vollständige native OMP-Funktionalität. Sie enthält die offenen Funktionsbereiche sowie Inventare der 42 RPC-Kommandos und 28 Built-in-Werkzeuge von OMP 18.2.1. Das Gesamtziel ist noch nicht erfüllt.
+[FEATURE-PARITY.md](FEATURE-PARITY.md) ist die verbindliche Arbeitsliste für vollständige native OMP-Funktionalität. Sie enthält die offenen Funktionsbereiche sowie den Abgleich der 55 RPC-Kommandos und 30 Built-in-Werkzeuge von OMP 18.4.10. Das Gesamtziel ist noch nicht erfüllt.
 
 ## Einstellungen verwenden
 
@@ -141,4 +141,4 @@ node test/local-engine-smoke.mjs /absoluter/pfad/zu/einem/MLX-Modell
 
 ## GitHub-Download
 
-[macOS-Vorabversion 0.1.0](https://github.com/LiLoLama/pi-desk/releases/tag/macos-v0.1.0): am 29.09.2026 neu gebautes DMG für Apple Silicon. Ad-hoc signiert, nicht notarisiert. Drittanbieter-Lizenzen liegen im App-Paket und auf dem DMG.
+[macOS-Vorabversion 0.2.0](https://github.com/LiLoLama/pi-desk/releases/tag/macos-v0.2.0): DMG für Apple Silicon mit OMP 18.4.10. Ad-hoc signiert, nicht notarisiert. Drittanbieter-Lizenzen liegen im App-Paket und auf dem DMG.

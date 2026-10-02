@@ -65,11 +65,16 @@ try {
   const started = waitFrame(rpc, (f) => f.type === 'agent_start');
   rpc.request('prompt', {message: 'Stay busy while I queue more work.'}).catch(() => {});
   await started;
+  const queueUpdate = waitFrame(rpc, (f) => f.type === 'queue_update' && (f.steering.length || f.followUp.length));
   await rpc.request('follow_up', {message: 'Afterwards, confirm you saw this follow-up.'});
   await rpc.request('steer', {message: 'Interrupt: wait for me.'});
+  const queued = await queueUpdate;
+  assert.ok(queued.steering.includes('Interrupt: wait for me.') || queued.followUp.includes('Afterwards, confirm you saw this follow-up.'));
   const state = await rpc.request('get_state');
   assert.equal(state.isStreaming, true);
+  assert.equal(state.isSettled, false);
   assert.ok(state.queuedMessageCount >= 1, 'queuedMessageCount=' + state.queuedMessageCount);
+  assert.ok(state.queuedMessages.steering.length + state.queuedMessages.followUp.length >= 1);
   await rpc.request('abort');
   await rpc.close();
   rpc = undefined;

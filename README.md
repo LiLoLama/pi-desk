@@ -4,15 +4,15 @@ Desktop-Oberflächen für Oh My Pi: eine native macOS-App und eine Windows-App a
 
 ## Downloads
 
-- [Windows 0.2.0 – ZIP für x64](https://github.com/LiLoLama/pi-desk/releases/tag/windows-v0.2.0)
-- [macOS 0.1.0 – DMG für Apple Silicon](https://github.com/LiLoLama/pi-desk/releases/tag/macos-v0.1.0)
+- [Windows 0.3.0 – ZIP für x64](https://github.com/LiLoLama/pi-desk/releases/tag/windows-v0.3.0)
+- [macOS 0.2.0 – DMG für Apple Silicon](https://github.com/LiLoLama/pi-desk/releases/tag/macos-v0.2.0)
 
 Beide sind Vorabversionen. Windows ist noch nicht auf einem echten Windows-PC verifiziert; macOS ist ad-hoc signiert und nicht notarisiert. Hinweise und Prüfsummen stehen beim jeweiligen Release.
 
 ## Struktur
 
 - [apps/macos](apps/macos/README.md): SwiftUI/AppKit, Apple Silicon, macOS 14+.
-- [apps/windows](apps/windows/README.md): Electron, Windows x64, Version 0.2.0.
+- [apps/windows](apps/windows/README.md): Electron, Windows x64, Version 0.3.0.
 - [docs/design](docs/design/README.md): Designentwürfe und früheres klickbares Mockup.
 - [docs/MIGRATION.md](docs/MIGRATION.md): Umzug, Prüfung und Herkunft der Dateien.
 - `archive/`: vorhandenes älteres Projekt-ZIP; nur lokal, von Git ausgeschlossen.
@@ -51,6 +51,6 @@ PI_DESK_OMP="$PWD/../macos/runtime/omp" npm start
 
 Build-Ergebnisse bleiben in `apps/macos/dist` bzw. `apps/windows/dist`. Abhängigkeiten, Runtime-Binaries und Builds sind lokal vorhanden, aber von Git ausgeschlossen. Für GitHub werden fertige Pakete als Release-Anhänge veröffentlicht, nicht als Quelldateien eingecheckt.
 
-Die Release-Pakete werden getrennt pro Plattform angeboten. Der Mac-Build wurde für den Release am 29.09.2026 neu kompiliert und paketiert; Windows wurde aus dem aktuellen Repository neu paketiert. Die plattformspezifischen Prüfberichte und Release-Hinweise benennen die verbleibenden Grenzen.
+Die Release-Pakete werden getrennt pro Plattform angeboten. Beide Pakete enthalten OMP 18.4.10 und wurden am 02.10.2026 aus dem aktuellen Repository neu gebaut. Die plattformspezifischen Prüfberichte und Release-Hinweise benennen die verbleibenden Grenzen; insbesondere ersetzt ein macOS-Test keinen echten Windows-Lauf.
 
 Das Repository [LiLoLama/pi-desk](https://github.com/LiLoLama/pi-desk) ist seit 29.09.2026 öffentlich. Drittanbieter-Lizenzhinweise bleiben erhalten. Für den eigenen Pi-Desk-Code ist noch keine allgemeine Open-Source-Lizenz festgelegt; öffentlich sichtbar bedeutet nicht automatisch frei lizenziert.

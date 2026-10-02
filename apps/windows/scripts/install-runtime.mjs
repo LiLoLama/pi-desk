@@ -3,11 +3,11 @@ import {createHash} from 'node:crypto';
 import {fileURLToPath} from 'node:url';
 import path from 'node:path';
 const root=fileURLToPath(new URL('../',import.meta.url));
-const base='https://github.com/can1357/oh-my-pi/releases/download/v18.2.1/';
+const base='https://github.com/can1357/oh-my-pi/releases/download/v18.4.10/';
 const assets=[
- ['omp-windows-x64.exe','runtime/win32-x64/omp.exe','fee52652c7b0b90eb7716b3c6da50ab4d90442505eef1c5349c9428e8d966679'],
+ ['omp-windows-x64.exe','runtime/win32-x64/omp.exe','7232c209641f0cad7e20bdb3a074cdb2fb31ae2aa73d42c491c705d28e0d3895'],
  ['LICENSE','licenses/OMP-LICENSE.txt','16c45f9d667442781f03fa198914cc39abcaa48ec5ed8f644643e554ca2fbf63'],
- ['THIRD-PARTY-NOTICES.txt','licenses/OMP-THIRD-PARTY-NOTICES.txt','73c0c20e5b9b3ecedb5d6dbfcdd73905155927f52ae8a4d1d04fedcfacf0626e']
+ ['THIRD-PARTY-NOTICES.txt','licenses/OMP-THIRD-PARTY-NOTICES.txt','d0c2e7c05bb4d755044b13fa560be58d01ab7c980b87892400a979397e569a8b']
 ];
 const hash=b=>createHash('sha256').update(b).digest('hex');
 for(const [name,relative,sha] of assets){

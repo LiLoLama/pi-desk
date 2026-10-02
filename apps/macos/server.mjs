@@ -15,6 +15,7 @@ import {listFiles,textFile,gitChanges} from './files.mjs';
 import {Plugins} from './plugins.mjs';
 import {listWorktrees,addWorktree,removeWorktree,gitOverview} from './worktrees.mjs';
 import {listRules,saveRule} from './rules.mjs';
+import {syncRpcMessage,queueFromSnapshot,rpcStateBusy} from './rpc-contract.mjs';
 const here=path.dirname(fileURLToPath(import.meta.url));
 let port=Number(process.env.PI_DESK_PORT??8767),origin=`http://127.0.0.1:${port}`;
 const nativeToken=process.env.PI_DESK_NATIVE_TOKEN;
@@ -42,7 +43,7 @@ function broadcast(event){for(const res of clients){if(res.writableLength>200000
 function snapshot(){return {projects:db.projects,tasks:db.tasks.map(t=>({...t,busy:workers.get(t.id)?.busy||false})),authBusy:authWorker?.busy||false};}
 function changed(){broadcast({type:'state',data:snapshot()});}
 const modes={'always-ask':'Nachfragen',write:'Dateien erlauben',yolo:'Vollzugriff'};
-const builtinTools=['read','write','edit','bash','grep','glob','ast_edit','ask','debug','eval','lsp','task','hub','todo','web_search'];
+const builtinTools=['read','write','edit','bash','grep','glob','ast_edit','ask','debug','eval','lsp','task','wait','todo','web_search'];
 function taskTools(){
   return builtinTools.join(',');
 }
@@ -53,7 +54,7 @@ function toolApproval(mode){
     read:'allow',grep:'allow',glob:'allow',
     write:writePolicy,edit:writePolicy,ast_edit:writePolicy,
     bash:execPolicy,eval:execPolicy,debug:execPolicy,lsp:'allow',
-    ask:'allow',todo:'allow',hub:'allow',task:execPolicy,
+    ask:'allow',todo:'allow',wait:'allow',task:execPolicy,
     web_search:'allow',browser:execPolicy,computer:execPolicy
   };
   return approval;
@@ -94,8 +95,8 @@ if(!settings.state.pty)args.push('--no-pty');
 if(settings.state.advisor)args.push('--advisor');
 if(settings.state.prewalk)args.push('--prewalk');
 if(task){args.push(`--thinking=${settings.state.thinking}`);if(settings.state.instructions)args.push(`--append-system-prompt=${settings.instructions}`);args.push('--tools='+taskTools());if(task.sessionFile)args.push(`--resume=${task.sessionFile}`);if(task.model&&(task.model.provider!=='pi-desk-local'||localModels.active?.state==='ready'))args.push(`--model=${task.model.provider}/${task.model.id}`);}else args.push('--no-tools','--no-session','--no-rules');if(!task?.model||(task.model.provider==='pi-desk-local'&&localModels.active?.state!=='ready'))args.push('--model=anthropic/claude-sonnet-4-5');
-const rpc=new Rpc(path.join(here,'runtime/omp'),args,{...process.env,PI_CODING_AGENT_DIR:path.join(data,'agent')});engines.add(rpc);rpc.once('closed',()=>engines.delete(rpc));const w={rpc,id,busy:false,messages:[],pending:new Map(),error:'',notice:'',queue:[],thinkingLevel:settings.state.thinking||'auto',runtime:null,subagents:[]};
-rpc.on('frame',f=>{if(f.type==='message_start'){w.messages.push(f.message);if(f.message?.role==='user')dropQueued(w,id,previewMessage(f.message));}if(['message_update','message_end'].includes(f.type)){const last=w.messages.length-1;if(last>=0&&w.messages[last].role===f.message?.role)w.messages[last]=f.message;else if(f.message)w.messages.push(f.message);}if(f.type==='agent_start')w.busy=true;if(f.type==='agent_end'&&f.isTerminal!==false){w.busy=false;refreshRuntime(w).then(()=>changed());}if(f.type==='prompt_result'&&f.agentInvoked===false)w.busy=false;if(f.type==='response'&&!f.success){w.error=f.error; if(f.command==='prompt')w.busy=false;}
+const rpc=new Rpc(path.join(here,'runtime/omp'),args,{...process.env,PI_CODING_AGENT_DIR:path.join(data,'agent')});engines.add(rpc);rpc.once('closed',()=>engines.delete(rpc));const w={rpc,id,busy:false,messages:[],messageIds:new Map(),pending:new Map(),error:'',notice:'',queue:[],thinkingLevel:settings.state.thinking||'auto',runtime:null,subagents:[]};
+rpc.on('frame',f=>{if(['message_start','message_update','message_end'].includes(f.type)){syncRpcMessage(w.messages,w.messageIds,f);if(f.type==='message_start'&&f.message?.role==='user')dropQueued(w,id,previewMessage(f.message));}if(f.type==='queue_update')syncQueue(w,id,{steering:f.steering,followUp:f.followUp});if(f.type==='agent_start')w.busy=true;if(f.type==='prompt_result'){if(f.status==='error'){w.error=f.error?.message||'Agentenlauf fehlgeschlagen.';}if(f.sessionSettled===true||f.agentInvoked===false){w.busy=false;refreshRuntime(w).then(()=>changed());}}if(f.type==='session_settled'){w.busy=false;refreshRuntime(w).then(()=>changed());}if(f.type==='agent_end'&&f.isTerminal!==false){refreshRuntime(w).then(()=>changed());}if(f.type==='response'&&!f.success){w.error=f.error; if(f.command==='prompt')w.busy=false;}
 if(f.type==='extension_ui_request'){if(f.method==='cancel')w.pending.delete(f.targetId);else if(['confirm','input','editor','select','open_url'].includes(f.method))w.pending.set(f.id,f);else if(f.method==='notify')w.notice=f.message;}
 if(['subagent_lifecycle','subagent_progress','subagent_event'].includes(f.type))refreshRuntime(w);
 if(!['response','ready','available_commands_update'].includes(f.type))broadcast({type:'rpc',id,event:f});if(f.type==='response'&&!f.success)broadcast({type:'failure',id,error:f.error});});
@@ -105,13 +106,13 @@ if(task){
   await applySessionPrefs(rpc);
   await rpc.request('set_subagent_subscription',{level:'events'},8000).catch(()=>{});
 }
-const state=await rpc.request('get_state');w.thinkingLevel=state.thinkingLevel||settings.state.thinking||'auto';w.runtime=runtimeFrom(state);w.subagents=[];
+const state=await rpc.request('get_state');w.thinkingLevel=state.thinkingLevel||settings.state.thinking||'auto';w.runtime=runtimeFrom(state);w.busy=rpcStateBusy(state);syncQueue(w,id,state.queuedMessages);w.subagents=[];
 if(task){
   task.sessionFile=state.sessionFile;
   const available=(await rpc.request('get_available_models')).models;
   if(task.model?.provider!=='pi-desk-local'||localModels.active?.state==='ready')task.model=state.model&&available.some(m=>m.id===state.model.id&&m.provider===state.model.provider)?{id:state.model.id,provider:state.model.provider,name:state.model.name}:undefined;
   await save();
-  const history=await rpc.request('get_messages');w.messages=history.messages||[];
+  const history=await rpc.request('get_messages');w.messages=history.messages||[];w.messageIds.clear();
   w.subagents=(await rpc.request('get_subagents',{},8000).catch(()=>({subagents:[]}))).subagents||[];
 }
 return w;}
@@ -138,6 +139,8 @@ function runtimeFrom(state){
     interruptMode:state.interruptMode||'immediate',
     messageCount:state.messageCount||0,
     queuedMessageCount:state.queuedMessageCount||0,
+    hasPendingAsyncWork:state.hasPendingAsyncWork===true,
+    isSettled:state.isSettled!==false,
     contextUsage:state.contextUsage||null,
     sessionName:state.sessionName||'',
     todos:Array.isArray(state.todoPhases)?state.todoPhases:[]
@@ -148,6 +151,8 @@ async function refreshRuntime(w){
     const state=await w.rpc.request('get_state');
     w.thinkingLevel=state.thinkingLevel||w.thinkingLevel;
     w.runtime=runtimeFrom(state);
+    w.busy=rpcStateBusy(state);
+    syncQueue(w,w.id,state.queuedMessages);
     w.subagents=(await w.rpc.request('get_subagents',{},8000).catch(()=>({subagents:w.subagents||[]}))).subagents||[];
   }catch{}
 }
@@ -169,6 +174,10 @@ function dropQueued(w,id,text){
   if(i<0)return;
   w.queue.splice(i,1);
   broadcast({type:'queue',id,queue:w.queue});
+}
+function syncQueue(w,id,snapshot){
+  const next=queueFromSnapshot(w.queue,snapshot,randomUUID);if(!next)return;
+  if(JSON.stringify(next)!==JSON.stringify(w.queue)){w.queue=next;broadcast({type:'queue',id,queue:w.queue});}
 }
 function parseImages(raw){
   if(raw==null)return [];
@@ -251,10 +260,10 @@ if(route==='/api/capabilities/plugin-installed')return updateSettings(async()=>(
 if(route==='/api/capabilities/marketplace')return plugins.marketplaceAdd(b.source);
 if(route==='/api/capabilities/runtime'){
 const w=await worker(url.searchParams.get('taskId'));const state=await w.rpc.request('get_state');const commands=await w.rpc.request('get_available_commands');
-// OMP 18 exposes deferred MCP tools as xd:// routes in its live system prompt.
+// Deferred MCP tools are mounted as xd:// routes; OMP 18.4 changed the surrounding prose.
 const prompt=Array.isArray(state.systemPrompt)?state.systemPrompt.join('\n'):String(state.systemPrompt||'');
 const names=new Set((state.dumpTools||[]).filter(t=>t.name.startsWith('mcp__')).map(t=>t.name));
-for(const match of prompt.matchAll(/^- xd:\/\/(mcp__[A-Za-z0-9_-]+) — /gm))names.add(match[1]);
+for(const match of prompt.matchAll(/(?:^|\s|`)xd:\/\/(mcp__[A-Za-z0-9_-]+)(?=`|\s|$)/gm))names.add(match[1]);
 return {tools:[...names].map(name=>({name})),skills:(commands.commands||[]).filter(c=>c.name.includes('skill:')).map(c=>c.name)};
 }
 
@@ -390,7 +399,7 @@ if(route==='/api/new-session'){
   if(result?.cancelled)throw Error('Neue Sitzung abgebrochen.');
   const state=await w.rpc.request('get_state');
   t.sessionFile=state.sessionFile;await save();
-  w.messages=[];w.pending.clear();w.queue=[];await refreshRuntime(w);
+  w.messages=[];w.messageIds.clear();w.pending.clear();w.queue=[];await refreshRuntime(w);
   return {ok:true,task:t,runtime:w.runtime};
 }
 if(route==='/api/abort-retry'){const w=await worker(id);await w.rpc.request('abort_retry');return {ok:true};}
@@ -495,9 +504,12 @@ if(route==='/api/follow-up'||route==='/api/steer'){
 }
 if(route==='/api/queue-remove'){
   const w=await worker(id);
-  const before=w.queue.length;
+  const item=w.queue.find(q=>q.id===b.id);
+  if(!item)throw Error('Eintrag ist nicht mehr in der Warteschlange.');
+  const queue=item.kind==='steer'?'steering':'followUp';
+  const result=await w.rpc.request('remove_queued_message',{message:item.text,queue});
+  if(result?.removed===false)throw Error('Eintrag ist nicht mehr in der Warteschlange.');
   w.queue=w.queue.filter(q=>q.id!==b.id);
-  if(w.queue.length===before)throw Error('Eintrag ist nicht mehr in der Warteschlange.');
   broadcast({type:'queue',id,queue:w.queue});
   return {ok:true,queue:w.queue};
 }

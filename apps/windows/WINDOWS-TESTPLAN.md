@@ -1,4 +1,4 @@
-# Windows-Testliste · Pi Desk 0.2.0
+# Windows-Testliste · Pi Desk 0.3.0 · OMP 18.4.10
 
 Bitte mit einem kleinen Testprojekt beginnen. Bei einem Fehler notieren: Windows-Version, CPU/GPU, Modell/Anbieter, konkrete Schritte, erwartetes/tatsächliches Ergebnis und sichtbare Fehlermeldung. Keine API-Schlüssel oder vertraulichen Chats in Fehlerberichte kopieren.
 
@@ -9,7 +9,7 @@ Bitte mit einem kleinen Testprojekt beginnen. Bei einem Fehler notieren: Windows
 - [ ] Projektordner mit Leerzeichen/Umlauten auswählen; neues Projekt und neue Aufgabe anlegen.
 - [ ] Anbieter-Login im Standardbrowser vollständig abschließen, ggf. Code eingeben; Modell wählen und Antwort erhalten.
 - [ ] Alternativ kompatible API/Ollama/LM Studio speichern, testen, bearbeiten und entfernen.
-- [ ] Stream, Markdown-Tabelle, Code, Denkinhalte (falls geliefert), Dateilinks und Werkzeuggruppen prüfen.
+- [ ] Stream, Markdown-Tabelle, Code, aufklappbare Denkinhalte (falls geliefert), Dateilinks und Werkzeuggruppen prüfen. Nach einem Hintergrundjob kontrollieren, dass „arbeitet“ erst endet, wenn OMP vollständig ruht.
 - [ ] Fenster schmal/breit, Zoom, Windows-Skalierung und Systemmenü über Alt prüfen.
 
 ## 2. Agentenarbeit und Genehmigungen
@@ -18,7 +18,7 @@ Bitte mit einem kleinen Testprojekt beginnen. Bei einem Fehler notieren: Windows
 - [ ] Für Chat merken: gleiches Werkzeug im selben Chat wird wieder erlaubt; anderer Chat fragt weiter nach.
 - [ ] Global merken: Regel gilt auch in anderem Chat. App neu starten und Persistenz prüfen; Regeln anschließend löschen.
 - [ ] Modi Nachfragen/Dateien erlauben/Vollzugriff mit harmlosen Aufträgen prüfen.
-- [ ] Längeren Auftrag starten, zwei Folgenachrichten einreihen und eine entfernen: nur die verbleibende wird ausgeführt.
+- [ ] Längeren Auftrag starten, zwei Folgenachrichten einreihen und eine entfernen: nur die verbleibende wird ausgeführt. App kurz neu fokussieren und prüfen, dass die Queue nicht doppelt oder veraltet erscheint.
 - [ ] Slash-Befehl wie `/help` in Warteschlange prüfen; danach folgt die nächste normale Nachricht.
 - [ ] Alt+Enter zur unmittelbaren Steuerung; Stoppen und Unterbrechen prüfen. Entfernen gilt nur für noch nicht übergebene Folgeaufträge.
 - [ ] Während laufender Arbeit Fenster schließen: Rückfrage abbrechen, dann schließen; anschließend keine verwaisten Pi-Desk-/OMP-Prozesse.

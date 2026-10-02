@@ -168,6 +168,6 @@ Discovery pairs search with an accessible MLX/GGUF format picker. Detail views s
 
 Finish review: **ship** for the scored visual fixes after native inline captures. This records the reviewed presentation, not universal model or inference compatibility.
 
-## Windows-Port 0.2.0
+## Windows-Port 0.3.0
 
 Die Windows-Ausgabe übernimmt Quiet Studio Dark in Electron. Die erweiterte Oberfläche bietet eine seitliche Einstellungsnavigation, kompakte Werkzeuggruppen und explizite werkzeugbezogene Freigaben. Native Windows-Fensterrahmen und Systemdialoge ersetzen AppKit/SwiftUI. MLX und native Pet-Animationen werden nicht als plattformgleiche Funktionen ausgewiesen; unter Windows stehen GGUF über CPU/Vulkan und ein vereinfachter Pi-Begleiter bereit.

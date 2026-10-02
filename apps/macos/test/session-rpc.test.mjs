@@ -53,6 +53,12 @@ test('OMP session RPCs accept thinking, stats, todos, commands, compact and suba
     assert.ok(Array.isArray(todos.todoPhases));
     const state = await rpc.request('get_state');
     assert.ok(state.sessionFile);
+    assert.equal(typeof state.isSettled, 'boolean');
+    assert.equal(typeof state.hasPendingAsyncWork, 'boolean');
+    assert.ok(Array.isArray(state.queuedMessages?.steering));
+    assert.ok(Array.isArray(state.queuedMessages?.followUp));
+    const thinking = await rpc.request('get_available_thinking_levels');
+    assert.ok(Array.isArray(thinking.levels));
     const stats = await rpc.request('get_session_stats');
     assert.equal(typeof stats, 'object');
     const commands = await rpc.request('get_available_commands');

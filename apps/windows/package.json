@@ -1,6 +1,6 @@
 {
   "name": "pi-desk-windows",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Pi Desk für Windows – lokale Desktop-Oberfläche für Oh My Pi",
   "private": true,
   "type": "module",
@@ -10,7 +10,7 @@
     "start": "electron .",
     "dev:server": "node server.mjs",
     "runtime:win": "node scripts/install-runtime.mjs",
-    "test": "node --test test/core.test.mjs test/settings.test.mjs test/capabilities.test.mjs test/local-models.test.mjs test/windows.test.mjs test/parity.test.mjs",
+    "test": "node --test test/core.test.mjs test/settings.test.mjs test/capabilities.test.mjs test/local-models.test.mjs test/windows.test.mjs test/parity.test.mjs test/rpc-contract.test.mjs",
     "test:host": "node test/native-host.mjs",
     "build:win": "npm run runtime:win && electron-builder --win zip --x64",
     "build:installer": "npm run runtime:win && electron-builder --win nsis --x64",

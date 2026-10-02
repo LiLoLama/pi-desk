@@ -52,12 +52,18 @@ struct PetActivity {
       running.remove(task)
       requests[task] = nil
     }
-    if type == "agent_end", event["isTerminal"] as? Bool != false {
+    if type == "prompt_result" {
+      if event["status"] as? String == "error" { failed.insert(task) }
+      if event["status"] as? String == "aborted" { interrupted.insert(task) }
+      if event["sessionSettled"] as? Bool == true || event["agentInvoked"] as? Bool == false {
+        running.remove(task)
+      }
+    }
+    if type == "session_settled" {
       running.remove(task)
       requests[task] = nil
       lastTask = task
       if !failed.contains(task) && !interrupted.contains(task) { completedAt = now }
     }
-    if type == "prompt_result", event["agentInvoked"] as? Bool == false { running.remove(task) }
   }
 }

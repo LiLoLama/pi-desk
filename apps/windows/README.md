@@ -1,15 +1,15 @@
-# Pi Desk für Windows · 0.2.0
+# Pi Desk für Windows · 0.3.0
 
 Eigenständiger Windows-Port in einem eigenen Ordner. Die native Mac-App bleibt unverändert. Der vorhandene OMP-Unterbau läuft in einer isolierten Electron-Desktop-App mit der bestehenden Quiet-Studio-Gestaltung.
 
 ## Start auf Windows
 
-1. `dist/Pi-Desk-0.2.0-Windows-x64.zip` vollständig auf einem Intel-/AMD-PC entpacken.
+1. `dist/Pi-Desk-0.3.0-Windows-x64.zip` vollständig auf einem Intel-/AMD-PC entpacken.
 2. **Pi Desk.exe** starten. Alle Begleitdateien zusammenlassen.
 3. Anbieter verbinden oder unter Einstellungen einen kompatiblen Modellserver hinzufügen.
 4. Mit **Strg+O** einen Projektordner öffnen, Modell wählen und Nachricht senden.
 
-Electron, Node und OMP 18.2.1 sind enthalten. Für die grundlegende App ist keine Node-/Bun-Installation erforderlich. Git wird für Git-Funktionen und Worktrees zusätzlich benötigt; bestimmte externe Plugins können eigene Voraussetzungen haben. WSL ist für den App-Start keine Voraussetzung.
+Electron, Node und OMP 18.4.10 sind enthalten. Für die grundlegende App ist keine Node-/Bun-Installation erforderlich. Git wird für Git-Funktionen und Worktrees zusätzlich benötigt; bestimmte externe Plugins können eigene Voraussetzungen haben. WSL ist für den App-Start keine Voraussetzung.
 
 Das Paket ist nicht signiert und enthält keinen automatischen Updater. Es ist ein ZIP mit startbarer EXE, kein Setup-Installer. Windows ARM64 wurde nicht gebaut.
 
@@ -18,7 +18,7 @@ Das Paket ist nicht signiert und enthält keinen automatischen Updater. Es ist e
 - Projekte, persistente Chats, Suche, Umbenennen, Archiv und Papierkorb mit Wiederherstellen/endgültigem Löschen.
 - Streaming, Modellwechsel, Denkaufwand, Fast-Modus, Komprimierung, Statistiken, Slash-Befehle und Sitzungsreset.
 - Echte Genehmigungen: einmalig, werkzeugspezifisch für den Chat oder global; gespeicherte Regeln lassen sich löschen. Anbieter-Sicherheitsabfragen werden nicht automatisch bestätigt.
-- Warteschlange mit einzeln entfernbaren Folgeaufträgen; sofortige Steuerungsnachricht, Unterbrechen und Stoppen.
+- Mit OMP 18.4.10 synchronisierte Warteschlange mit einzeln entfernbaren Folgeaufträgen; sofortige Steuerungsnachricht, Unterbrechen und Stoppen. Agentenarbeit gilt erst nach dem vollständigen RPC-Sitzungsabschluss als beendet.
 - Bildanhänge aus Datei oder Zwischenablage, Textdateien als Kontext, Projektbaum, Textvorschau, Git-Diffs und Explorer-Anzeige.
 - Markdown mit Tabellen, Listen, Code und Dateilinks; kopieren, Nachricht als neuen Entwurf bearbeiten, Antwort in neuem Chat fortsetzen; einklappbare Denkinhalte, sofern das Modell sie liefert.
 - Sitzungen importieren, verzweigen und als HTML speichern. Handoff und Teilen über die OMP-Funktionen, jeweils mit sichtbaren Fehlern bzw. Bestätigung vor Veröffentlichung.
@@ -49,7 +49,7 @@ Die ersten drei Kürzel und das Kürzel für Dateien/Vorschau lassen sich anpass
 
 Die Funktionen sind weitgehend zugänglich, aber nicht in jedem Detail identisch mit SwiftUI: MLX ist auf Windows nicht verfügbar; der Pi-Begleiter ist vereinfacht; Todos verwenden zusätzlich einen JSON-Editor, Subagenten eine einfache Verlaufsansicht. Es gibt kein eingebettetes interaktives Terminal und keine gerenderte Web-/PDF-Vorschau. Handoff kann bei kurzen oder bereits komprimierten Sitzungen vom Agenten abgelehnt werden. Geschützte Hugging-Face-Modelle mit zusätzlicher Anmeldung sind nicht Teil des Download-Dialogs.
 
-Gemeinsame Logik, echte OMP-Prozesse und die Electron-Oberfläche wurden auf macOS mit isolierten Profilen geprüft. Ein tatsächlicher Windows-Lauf, Windows-OAuth, Bildinferenz und CPU-/GPU-Inferenz müssen auf Windows geprüft werden. Externe Plugin-Installation und öffentliche Freigabe wurden nicht ausgelöst. Details: [VERIFICATION.md](VERIFICATION.md). Für deinen Test: [WINDOWS-TESTPLAN.md](WINDOWS-TESTPLAN.md).
+Gemeinsame Logik, echte OMP-18.4.10-Prozesse und die Electron-Oberfläche wurden auf macOS mit isolierten Profilen geprüft. Ein tatsächlicher Windows-Lauf, Windows-OAuth, Bildinferenz und CPU-/GPU-Inferenz müssen auf Windows geprüft werden. Externe Plugin-Installation wurde nicht ausgelöst. Details: [VERIFICATION.md](VERIFICATION.md). Für deinen Test: [WINDOWS-TESTPLAN.md](WINDOWS-TESTPLAN.md).
 
 ## Daten und Rechte
 
@@ -80,7 +80,7 @@ PI_DESK_OMP="$PWD/../macos/runtime/omp" npm start
 
 ## Quellen und Lizenzen
 
-- [Oh My Pi 18.2.1](https://github.com/can1357/oh-my-pi/releases/tag/v18.2.1)
+- [Oh My Pi 18.4.10](https://github.com/can1357/oh-my-pi/releases/tag/v18.4.10)
 - [llama.cpp b11013](https://github.com/ggml-org/llama.cpp/releases/tag/b11013)
 - [Electron-Sicherheitsrichtlinien](https://www.electronjs.org/docs/latest/tutorial/security)
 - [Marked](https://marked.js.org/) und [DOMPurify](https://github.com/cure53/DOMPurify)

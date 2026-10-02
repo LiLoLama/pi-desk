@@ -146,7 +146,7 @@ struct DeskSettingsView: View {
           }.buttonStyle(.plain)
         }
         Spacer()
-        Text("Pi Desk · OMP 18.2.1").font(.caption2).foregroundStyle(.secondary)
+        Text("Pi Desk · OMP 18.4.10").font(.caption2).foregroundStyle(.secondary)
       }.padding(20).frame(width: 205).background(Color.white.opacity(0.025))
       Divider().opacity(0.3)
       VStack(alignment: .leading, spacing: 22) {

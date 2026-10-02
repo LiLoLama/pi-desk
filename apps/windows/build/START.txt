@@ -1,4 +1,4 @@
-Pi Desk für Windows – Version 0.2.0 (x64)
+Pi Desk für Windows – Version 0.3.0 (x64)
 
 1. Das gesamte ZIP in einen lokalen Ordner entpacken.
 2. Pi Desk.exe öffnen. Alle Begleitdateien zusammenlassen.

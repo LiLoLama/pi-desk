@@ -10,6 +10,7 @@ import {promisify} from 'node:util';
 const exec=promisify(execFile);
 import {randomBytes,randomUUID} from 'node:crypto';
 import {Rpc} from './rpc.mjs';
+import {applyMessageFrame,combinedQueue,deferredMcpNames,normalizeQueuedMessages,promptLifecycle} from './rpc-contract.mjs';
 import {SettingsStore} from './settings.mjs';
 import {LocalModels,searchCatalog,catalogFiles} from './local-models.mjs';
 import {Capabilities} from './capabilities.mjs';
@@ -45,7 +46,7 @@ function broadcast(event){for(const res of clients){if(res.writableLength>200000
 function snapshot(){return {projects:db.projects,tasks:db.tasks.map(t=>({...t,busy:!!(workers.get(t.id)?.busy||workers.get(t.id)?.queue.length)})),authBusy:authWorker?.busy||false};}
 function changed(){broadcast({type:'state',data:snapshot()});}
 const modes={'always-ask':'Nachfragen',write:'Dateien erlauben',yolo:'Vollzugriff'};
-const builtinTools=['read','write','edit','bash','grep','glob','ast_edit','ask','debug','eval','lsp','task','hub','todo','web_search'];
+const builtinTools=['read','write','edit','bash','grep','glob','ast_edit','ask','debug','eval','lsp','task','wait','todo','web_search'];
 function taskTools(){
   return builtinTools.join(',');
 }
@@ -56,7 +57,7 @@ function toolApproval(mode){
     read:'allow',grep:'allow',glob:'allow',
     write:writePolicy,edit:writePolicy,ast_edit:writePolicy,
     bash:execPolicy,eval:execPolicy,debug:execPolicy,lsp:'allow',
-    ask:'allow',todo:'allow',hub:'allow',task:execPolicy,
+    ask:'allow',todo:'allow',wait:'allow',task:execPolicy,
     web_search:'allow',browser:execPolicy,computer:execPolicy
   };
   return approval;
@@ -97,8 +98,9 @@ if(!settings.state.pty)args.push('--no-pty');
 if(settings.state.advisor)args.push('--advisor');
 if(settings.state.prewalk)args.push('--prewalk');
 if(task){args.push(`--thinking=${settings.state.thinking}`);if(settings.state.instructions)args.push(`--append-system-prompt=${settings.instructions}`);args.push('--tools='+taskTools());if(task.sessionFile)args.push(`--resume=${task.sessionFile}`);if(task.model&&(task.model.provider!=='pi-desk-local'||localModels.active?.state==='ready'))args.push(`--model=${task.model.provider}/${task.model.id}`);}else args.push('--no-tools','--no-session','--no-rules');if(!task?.model||(task.model.provider==='pi-desk-local'&&localModels.active?.state!=='ready'))args.push('--model=anthropic/claude-sonnet-4-5');
-const rpc=new Rpc(runtimeBinary(here),args,{...process.env,PI_CODING_AGENT_DIR:path.join(data,'agent')});engines.add(rpc);rpc.once('closed',()=>engines.delete(rpc));const w={rpc,id,busy:false,messages:[],pending:new Map(),error:'',notice:'',queue:[],queuedPayloads:new Map(),queuePaused:false,thinkingLevel:settings.state.thinking||'auto',runtime:null,subagents:[]};
-rpc.on('frame',f=>{if(f.type==='command_output'&&(f.text||f.message))w.messages.push({role:'assistant',content:[{type:'text',text:String(f.text||f.message)}],timestamp:Date.now()});if(f.type==='message_start'){w.messages.push(f.message);if(f.message?.role==='user')dropQueued(w,id,previewMessage(f.message));}if(['message_update','message_end'].includes(f.type)){const last=w.messages.length-1;if(last>=0&&w.messages[last].role===f.message?.role)w.messages[last]=f.message;else if(f.message)w.messages.push(f.message);}if(f.type==='agent_start')w.busy=true;if(f.type==='agent_end'&&f.isTerminal!==false){w.busy=false;refreshRuntime(w).then(()=>{changed();setTimeout(()=>drainQueue(w),0);});}if(f.type==='prompt_result'&&f.agentInvoked===false){w.busy=false;setTimeout(()=>drainQueue(w),0);}if(f.type==='response'&&!f.success){w.error=f.error; if(f.command==='prompt')w.busy=false;}
+const rpc=new Rpc(runtimeBinary(here),args,{...process.env,PI_CODING_AGENT_DIR:path.join(data,'agent')});engines.add(rpc);rpc.once('closed',()=>engines.delete(rpc));const w={rpc,id,busy:false,messages:[],messageIndexes:new Map(),pending:new Map(),error:'',notice:'',queue:[],ompQueue:{steering:[],followUp:[]},queuedPayloads:new Map(),queuePaused:false,thinkingLevel:settings.state.thinking||'auto',runtime:null,subagents:[],modernLifecycle:false,legacySettleTimer:null};
+rpc.on('frame',f=>{if(f.type==='command_output'&&(f.text||f.message))w.messages.push({role:'assistant',content:[{type:'text',text:String(f.text||f.message)}],timestamp:Date.now()});if(applyMessageFrame(w.messages,w.messageIndexes,f)&&f.type==='message_start'&&f.message?.role==='user')dropQueued(w,id,previewMessage(f.message));if(f.type==='queue_update')setOmpQueue(w,{steering:f.steering,followUp:f.followUp});
+const lifecycle=promptLifecycle({busy:w.busy,error:w.error,modern:w.modernLifecycle},f);w.busy=lifecycle.busy;w.error=lifecycle.error;w.modernLifecycle=lifecycle.modern;if(f.type==='agent_start'&&w.legacySettleTimer){clearTimeout(w.legacySettleTimer);w.legacySettleTimer=null;}if(lifecycle.refresh)refreshRuntime(w).then(changed);if(f.type==='agent_end'&&lifecycle.legacyYield&&!w.modernLifecycle){clearTimeout(w.legacySettleTimer);w.legacySettleTimer=setTimeout(()=>{w.legacySettleTimer=null;if(!w.modernLifecycle){settleWorker(w);}},0);}if((f.type==='session_settled'||f.type==='prompt_result'&&f.sessionSettled===true||f.type==='prompt_result'&&f.agentInvoked===false)){settleWorker(w);}if(f.type==='prompt_result'&&f.status==='error')broadcast({type:'failure',id,error:w.error});if(f.type==='response'&&!f.success){w.error=f.error;if(f.command==='prompt'&&!w.modernLifecycle)settleWorker(w);}
 if(f.type==='extension_ui_request'){if(f.method==='cancel')w.pending.delete(f.targetId);else if(['confirm','input','editor','select','open_url'].includes(f.method)){if(desktopSettings.remembers(f,id)){rpc.send({type:'extension_ui_response',id:f.id,...approvedResponse(f)});broadcast({type:'approval-auto',id,tool:approvalKey(f)});return;}w.pending.set(f.id,f);}else if(f.method==='notify')w.notice=f.message;}
 if(['subagent_lifecycle','subagent_progress','subagent_event'].includes(f.type))refreshRuntime(w);
 if(!['response','ready','available_commands_update'].includes(f.type))broadcast({type:'rpc',id,event:f});if(f.type==='response'&&!f.success)broadcast({type:'failure',id,error:f.error});});
@@ -108,13 +110,13 @@ if(task){
   await applySessionPrefs(rpc);
   await rpc.request('set_subagent_subscription',{level:'events'},8000).catch(()=>{});
 }
-const state=await rpc.request('get_state');w.thinkingLevel=state.thinkingLevel||settings.state.thinking||'auto';w.runtime=runtimeFrom(state);w.subagents=[];
+const state=await rpc.request('get_state');w.thinkingLevel=state.thinkingLevel||settings.state.thinking||'auto';w.runtime=runtimeFrom(state);setOmpQueue(w,state.queuedMessages);w.busy=state.isSettled===false;w.subagents=[];
 if(task){
   task.sessionFile=state.sessionFile;
   const available=(await rpc.request('get_available_models')).models;
   if(task.model?.provider!=='pi-desk-local'||localModels.active?.state==='ready')task.model=state.model&&available.some(m=>m.id===state.model.id&&m.provider===state.model.provider)?{id:state.model.id,provider:state.model.provider,name:state.model.name}:undefined;
   await save();
-  const history=await rpc.request('get_messages');w.messages=history.messages||[];
+  const history=await rpc.request('get_messages');w.messages=history.messages||[];w.messageIndexes.clear();
   w.subagents=(await rpc.request('get_subagents',{},8000).catch(()=>({subagents:[]}))).subagents||[];
 }
 return w;}
@@ -141,6 +143,9 @@ function runtimeFrom(state){
     interruptMode:state.interruptMode||'immediate',
     messageCount:state.messageCount||0,
     queuedMessageCount:state.queuedMessageCount||0,
+    queuedMessages:normalizeQueuedMessages(state.queuedMessages),
+    isSettled:state.isSettled !== false,
+    hasPendingAsyncWork:state.hasPendingAsyncWork === true,
     contextUsage:state.contextUsage||null,
     sessionName:state.sessionName||'',
     todos:Array.isArray(state.todoPhases)?state.todoPhases:[]
@@ -151,6 +156,7 @@ async function refreshRuntime(w){
     const state=await w.rpc.request('get_state');
     w.thinkingLevel=state.thinkingLevel||w.thinkingLevel;
     w.runtime=runtimeFrom(state);
+    setOmpQueue(w,state.queuedMessages);
     w.subagents=(await w.rpc.request('get_subagents',{},8000).catch(()=>({subagents:w.subagents||[]}))).subagents||[];
   }catch{}
 }
@@ -161,7 +167,11 @@ function thinkingEfforts(model){
   if(Array.isArray(model?.thinking?.efforts))return model.thinking.efforts.filter(x=>typeof x==='string');
   return [];
 }
-function wSnapshot(w){return {messages:w.messages,pending:[...w.pending.values()],busy:w.busy,error:w.error,notice:w.notice,queue:w.queue||[],thinkingLevel:w.thinkingLevel||settings.state.thinking||'auto',runtime:w.runtime||null,todos:w.runtime?.todos||[],subagents:w.subagents||[]};}
+function visibleQueue(w){return combinedQueue(w.queue||[],w.ompQueue,w.queuedPayloads);}
+function publishQueue(w){broadcast({type:'queue',id:w.id,queue:visibleQueue(w)});}
+function setOmpQueue(w,value){w.ompQueue=normalizeQueuedMessages(value);if(w.runtime)w.runtime.queuedMessages=w.ompQueue;publishQueue(w);}
+function settleWorker(w){if(w.legacySettleTimer){clearTimeout(w.legacySettleTimer);w.legacySettleTimer=null;}w.busy=false;changed();setTimeout(()=>drainQueue(w),0);}
+function wSnapshot(w){return {messages:w.messages,pending:[...w.pending.values()],busy:w.busy,error:w.error,notice:w.notice,queue:visibleQueue(w),thinkingLevel:w.thinkingLevel||settings.state.thinking||'auto',runtime:w.runtime||null,todos:w.runtime?.todos||[],subagents:w.subagents||[]};}
 async function drainQueue(w){
  if(w.busy||w.queuePaused||w.pending.size||w.rpc.closed)return;
  const items=w.queue.filter(q=>w.queuedPayloads.has(q.id));if(!items.length)return;
@@ -171,7 +181,7 @@ async function drainQueue(w){
  // Each submitted entry is immutable once handed to OMP.
  for(const q of chosen)w.queuedPayloads.delete(q.id);
  w.queue=w.queue.filter(q=>!chosen.includes(q));w.busy=true;
- broadcast({type:'queue',id:w.id,queue:w.queue});changed();
+ publishQueue(w);changed();
  try{const result=await w.rpc.request('prompt',{message:payloads.map(p=>p.message).join('\n\n'),images:payloads.flatMap(p=>p.images)},120000);if(result?.agentInvoked===false){w.busy=false;setTimeout(()=>drainQueue(w),0);changed();}}
  catch(e){w.busy=false;w.error=e.message;w.queuePaused=true;broadcast({type:'failure',id:w.id,error:e.message});changed();}
 }
@@ -184,7 +194,7 @@ function dropQueued(w,id,text){
   const i=w.queue.findIndex(item=>item.text===text&&!w.queuedPayloads.has(item.id));
   if(i<0)return;
   w.queue.splice(i,1);
-  broadcast({type:'queue',id,queue:w.queue});
+  publishQueue(w);
 }
 function parseImages(raw){
   if(raw==null)return [];
@@ -270,11 +280,8 @@ if(route==='/api/capabilities/plugin-installed')return updateSettings(async()=>(
 if(route==='/api/capabilities/marketplace')return plugins.marketplaceAdd(b.source);
 if(route==='/api/capabilities/runtime'){
 const w=await worker(url.searchParams.get('taskId'));const state=await w.rpc.request('get_state');const commands=await w.rpc.request('get_available_commands');
-// OMP 18 exposes deferred MCP tools as xd:// routes in its live system prompt.
-const prompt=Array.isArray(state.systemPrompt)?state.systemPrompt.join('\n'):String(state.systemPrompt||'');
-const names=new Set((state.dumpTools||[]).filter(t=>t.name.startsWith('mcp__')).map(t=>t.name));
-for(const match of prompt.matchAll(/^- xd:\/\/(mcp__[A-Za-z0-9_-]+) — /gm))names.add(match[1]);
-return {tools:[...names].map(name=>({name})),skills:(commands.commands||[]).filter(c=>c.name.includes('skill:')).map(c=>c.name)};
+const names=deferredMcpNames(state);
+return {tools:names.map(name=>({name})),skills:(commands.commands||[]).filter(c=>c.name.includes('skill:')).map(c=>c.name)};
 }
 
 if(route==='/api/settings/connection-test')return settings.testConnection(b);

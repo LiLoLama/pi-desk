@@ -66,25 +66,52 @@ struct QueuedMessage: Identifiable {
   }
 }
 
+struct ToolCallInfo: Equatable {
+  let id: String
+  let name: String
+  let intent: String
+}
+
 struct ChatMessage: Identifiable, Equatable {
   let id: Int
   let role: String
   let text: String
+  let thinking: String
   let tool: String
+  let toolCallID: String
+  let toolCalls: [ToolCallInfo]
+  let toolIntent: String
   let error: Bool
   let sentAt: Date?
   init(_ o: Object, index: Int) {
     id = index
     role = string(o, "role")
     tool = string(o, "toolName")
+    toolCallID = string(o, "toolCallId")
     error = o["isError"] as? Bool ?? false
+    let content = objects(o, "content")
     let raw =
       (o["content"] as? String)
-      ?? objects(o, "content").filter { string($0, "type") == "text" }.map { string($0, "text") }
+      ?? content.filter { string($0, "type") == "text" }.map { string($0, "text") }
       .joined(separator: "\n")
-    text =
+    let visible =
       role == "user"
       ? (raw.components(separatedBy: "\n\n[Angehängter Dateikontext").first ?? raw) : raw
+    text = visible.trimmingCharacters(in: .whitespacesAndNewlines)
+    thinking = content.filter { string($0, "type") == "thinking" }.map {
+      let value = string($0, "thinking")
+      return value.isEmpty ? string($0, "text") : value
+    }.filter { !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
+      .joined(separator: "\n\n")
+    toolCalls = content.filter { string($0, "type") == "toolCall" }.map { part in
+      let arguments = part["arguments"] as? Object ?? [:]
+      let statedIntent = string(part, "intent")
+      let argumentIntent = string(arguments, "i")
+      return ToolCallInfo(
+        id: string(part, "id"), name: string(part, "name"),
+        intent: statedIntent.isEmpty ? argumentIntent : statedIntent)
+    }
+    toolIntent = string(o["details"] as? Object ?? [:], "intent")
     if let ms = o["timestamp"] as? Double {
       sentAt = Date(timeIntervalSince1970: ms / 1000)
     } else if let ms = o["timestamp"] as? Int {
@@ -113,15 +140,56 @@ private func groupedMessages(_ messages: [ChatMessage]) -> [MessageGroup] {
   return result
 }
 
+private let toolTitles = [
+  "read": "Datei lesen", "write": "Datei schreiben", "edit": "Datei bearbeiten",
+  "bash": "Befehl ausführen", "grep": "Text durchsuchen", "glob": "Dateien suchen",
+  "ast_edit": "Code strukturell bearbeiten", "ask": "Rückfrage stellen",
+  "debug": "Fehler untersuchen", "eval": "Code auswerten", "lsp": "Code analysieren",
+  "task": "Teilaufgabe bearbeiten", "wait": "Auf Hintergrundarbeit warten",
+  "todo": "Plan aktualisieren", "find": "Projekt semantisch durchsuchen",
+  "web_search": "Im Web suchen",
+]
+
+private func toolTitle(_ name: String) -> String {
+  toolTitles[name] ?? (name.isEmpty ? "Werkzeug verwenden" : name)
+}
+
+private func toolIntent(_ result: ChatMessage, messages: [ChatMessage]) -> String {
+  if !result.toolIntent.isEmpty { return result.toolIntent }
+  guard !result.toolCallID.isEmpty else { return "" }
+  return messages.lazy.reversed().flatMap(\.toolCalls).first { $0.id == result.toolCallID }?.intent ?? ""
+}
+
+struct ModelThinking: View {
+  let text: String
+  @State private var expanded = false
+  var body: some View {
+    DisclosureGroup(isExpanded: $expanded) {
+      ChatMarkdown(
+        text: text, fontSize: 12, onOpenFile: { _ in },
+        onRevealFile: { _ in }, onOpenURL: { _ in }
+      )
+      .foregroundStyle(.secondary)
+      .frame(maxWidth: 680, alignment: .leading)
+      .padding(.top, 8).padding(.leading, 20)
+    } label: {
+      Label("Gedanken des Modells", systemImage: "brain.head.profile")
+        .font(.caption).foregroundStyle(.secondary)
+    }
+    .accessibilityLabel("Gedanken des Modells, \(expanded ? "ausgeklappt" : "eingeklappt")")
+  }
+}
+
 struct ToolActivityGroup: View {
   let messages: [ChatMessage]
+  let allMessages: [ChatMessage]
   var onOpenFile: (String) -> Void = { _ in }
   var onRevealFile: (String) -> Void = { _ in }
   var onOpenURL: (String) -> Void = { _ in }
   @State private var expanded = false
   private var failed: Bool { messages.contains { $0.error } }
   private var summary: String {
-    let counts = Dictionary(grouping: messages, by: { $0.tool }).mapValues(\.count)
+    let counts = Dictionary(grouping: messages, by: { toolTitle($0.tool) }).mapValues(\.count)
     return counts.sorted { $0.key < $1.key }.prefix(3).map {
       $0.value == 1 ? $0.key : "\($0.value)× \($0.key)"
     }.joined(separator: " · ")
@@ -132,9 +200,13 @@ struct ToolActivityGroup: View {
         ForEach(messages) { message in
           VStack(alignment: .leading, spacing: 5) {
             Label(
-              message.tool + (message.error ? " · Fehlgeschlagen" : ""),
+              toolTitle(message.tool) + (message.error ? " · Fehlgeschlagen" : ""),
               systemImage: message.error ? "exclamationmark.circle" : "checkmark.circle"
             ).font(.caption).foregroundStyle(message.error ? Color.orange : Color.secondary)
+            let intent = toolIntent(message, messages: allMessages)
+            if !intent.isEmpty {
+              Text(intent).font(.caption).foregroundStyle(.secondary)
+            }
             if !message.text.isEmpty {
               ChatMarkdown(
                 text: message.text, fontSize: 11, plain: true, onOpenFile: onOpenFile,
@@ -144,16 +216,18 @@ struct ToolActivityGroup: View {
             }
           }
         }
-      }.padding(.top, 11).padding(.leading, 20)
+      }
+      .frame(maxWidth: .infinity, alignment: .leading)
+      .padding(.top, 11).padding(.leading, 20)
     } label: {
       HStack(spacing: 7) {
         Image(systemName: failed ? "exclamationmark.circle" : "checkmark.circle")
-        Text("Arbeit · \(messages.count) \(messages.count == 1 ? "Schritt" : "Schritte")")
+        Text("Ausgeführte Arbeit · \(messages.count) \(messages.count == 1 ? "Schritt" : "Schritte")")
         if !summary.isEmpty { Text(summary).foregroundStyle(.tertiary) }
       }.font(.caption).foregroundStyle(failed ? Color.orange : Color.secondary)
     }
     .accessibilityLabel(
-      "Arbeit, \(messages.count) \(messages.count == 1 ? "Schritt" : "Schritte"), \(expanded ? "ausgeklappt" : "eingeklappt")"
+      "Ausgeführte Arbeit, \(messages.count) \(messages.count == 1 ? "Schritt" : "Schritte"), \(expanded ? "ausgeklappt" : "eingeklappt")"
     )
   }
 }
@@ -161,26 +235,45 @@ struct ToolActivityGroup: View {
 struct WorkingStatus: View {
   let startedAt: Date
   let tools: [ChatMessage]
+  let allMessages: [ChatMessage]
+  let currentThinking: String
   let waiting: Bool
   let reduceMotion: Bool
-  @State private var expanded = false
+  @State private var expanded = true
   var body: some View {
     DisclosureGroup(isExpanded: $expanded) {
-      if tools.isEmpty {
-        Text("Der Agent plant den nächsten Schritt.").font(.caption).foregroundStyle(.secondary)
-          .padding(.leading, 20).padding(.top, 8)
-      } else {
-        VStack(alignment: .leading, spacing: 7) {
-          ForEach(tools) { message in
-            Label(message.tool, systemImage: message.error ? "exclamationmark.circle" : "checkmark.circle")
-              .font(.caption).foregroundStyle(message.error ? Color.orange : Color.secondary)
+      VStack(alignment: .leading, spacing: 10) {
+        if tools.isEmpty && currentThinking.isEmpty {
+          Text("Noch keine Details vom Modell empfangen.").font(.caption).foregroundStyle(.secondary)
+        }
+        if !currentThinking.isEmpty {
+          VStack(alignment: .leading, spacing: 4) {
+            Text("Aktueller Gedanke").font(.caption2).foregroundStyle(.tertiary)
+            ChatMarkdown(
+              text: currentThinking, fontSize: 11, onOpenFile: { _ in },
+              onRevealFile: { _ in }, onOpenURL: { _ in }
+            ).foregroundStyle(.secondary)
           }
-        }.padding(.leading, 20).padding(.top, 8)
+        }
+        ForEach(tools) { message in
+          VStack(alignment: .leading, spacing: 3) {
+            Label(
+              toolTitle(message.tool),
+              systemImage: message.error ? "exclamationmark.circle" : "checkmark.circle"
+            ).font(.caption).foregroundStyle(message.error ? Color.orange : Color.secondary)
+            let intent = toolIntent(message, messages: allMessages)
+            if !intent.isEmpty {
+              Text(intent).font(.caption2).foregroundStyle(.tertiary).padding(.leading, 20)
+            }
+          }
+        }
       }
+      .frame(maxWidth: .infinity, alignment: .leading)
+      .padding(.leading, 20).padding(.top, 8)
     } label: {
       HStack(spacing: 8) {
         WorkingDots(reduceMotion: reduceMotion)
-        Text(waiting ? "Wartet auf Genehmigung" : "Arbeitet")
+        Text(waiting ? "Wartet auf Genehmigung" : "Agent arbeitet")
         WorkingElapsed(startedAt: startedAt, reduceMotion: reduceMotion)
         if !tools.isEmpty {
           Text("· \(tools.count) \(tools.count == 1 ? "Schritt" : "Schritte")")
@@ -188,6 +281,9 @@ struct WorkingStatus: View {
         }
       }.font(.caption).foregroundStyle(.secondary)
     }
+    .accessibilityLabel(
+      "\(waiting ? "Wartet auf Genehmigung" : "Agent arbeitet"), Details \(expanded ? "ausgeklappt" : "eingeklappt")"
+    )
   }
 }
 
@@ -313,6 +409,7 @@ struct UIRequest: Identifiable {
   @Published var search = ""
   @Published var petActivity = PetActivity()
   private var rawMessages: [Object] = []
+  private var rawMessageIDs: [String: Int] = [:]
   private var messageFlush: Task<Void, Never>?
   private var messagesDirty = false
   private var drafts: [String: (String, [String], [DraftImage])] = [:]
@@ -341,7 +438,7 @@ struct UIRequest: Identifiable {
           : busy
             ? (queue.isEmpty
               ? "OMP arbeitet …" : "OMP arbeitet · \(queue.count) in der Warteschlange")
-            : "Lokal · OMP 18.2.1"
+            : "Lokal · OMP 18.4.10"
   }
 
   var automaticApprovalCount: Int {
@@ -575,6 +672,7 @@ struct UIRequest: Identifiable {
     messageFlush = nil
     messagesDirty = false
     rawMessages = []
+    rawMessageIDs = [:]
     messages = []
     pending = []
     queue = []
@@ -621,6 +719,7 @@ struct UIRequest: Identifiable {
     messageFlush = nil
     messagesDirty = false
     rawMessages = []
+    rawMessageIDs = [:]
     messages = []
     pending = []
     queue = []
@@ -634,6 +733,7 @@ struct UIRequest: Identifiable {
       let s = try await api("session?taskId=" + id)
       guard selected == id else { return }
       rawMessages = objects(s, "messages")
+      rawMessageIDs = [:]
       updateMessages()
       pending = objects(s, "pending").map(UIRequest.init)
       queue = objects(s, "queue").map(QueuedMessage.init)
@@ -650,12 +750,31 @@ struct UIRequest: Identifiable {
     } catch { self.error = error.localizedDescription }
     if selected == id { loading = false }
   }
+  private func decodedMessages() -> [ChatMessage] {
+    let decoded = rawMessages.enumerated().map { ChatMessage($0.element, index: $0.offset) }
+    var intents: [String: String] = [:]
+    for message in decoded {
+      for call in message.toolCalls where !call.id.isEmpty && !call.intent.isEmpty {
+        intents[call.id] = call.intent
+      }
+    }
+    return decoded.map { message in
+      guard message.role == "toolResult", message.toolIntent.isEmpty,
+        let intent = intents[message.toolCallID], !intent.isEmpty
+      else { return message }
+      var object = rawMessages[message.id]
+      var details = object["details"] as? Object ?? [:]
+      details["intent"] = intent
+      object["details"] = details
+      return ChatMessage(object, index: message.id)
+    }
+  }
   private func updateMessages(immediate: Bool = true) {
     if immediate {
       messageFlush?.cancel()
       messageFlush = nil
       messagesDirty = false
-      messages = rawMessages.enumerated().map { ChatMessage($0.element, index: $0.offset) }
+      messages = decodedMessages()
       return
     }
     messagesDirty = true
@@ -665,7 +784,7 @@ struct UIRequest: Identifiable {
       messageFlush = nil
       guard messagesDirty else { return }
       messagesDirty = false
-      messages = rawMessages.enumerated().map { ChatMessage($0.element, index: $0.offset) }
+      messages = decodedMessages()
     }
   }
   private func handle(_ o: Object) {
@@ -735,13 +854,26 @@ struct UIRequest: Identifiable {
       busy = true
       if workStartedAt == nil { workStartedAt = Date() }
     }
-    if kind == "prompt_result", e["agentInvoked"] as? Bool == false {
+    if kind == "prompt_result" {
+      if string(e, "status") == "error" {
+        let detail = e["error"] as? Object ?? [:]
+        error = string(detail, "message").isEmpty ? "Agentenlauf fehlgeschlagen." : string(detail, "message")
+      }
+      if e["sessionSettled"] as? Bool == true || e["agentInvoked"] as? Bool == false {
+        busy = false
+        workStartedAt = nil
+      }
+    }
+    if kind == "session_settled" {
       busy = false
       workStartedAt = nil
+      Task {
+        await refreshSessionExtras()
+        await loadFiles()
+        if inspectorTab == 2 { await loadDiff() }
+      }
     }
     if kind == "agent_end", e["isTerminal"] as? Bool != false {
-      busy = false
-      workStartedAt = nil
       updateMessages(immediate: true)
       Task {
         await refreshSessionExtras()
@@ -753,14 +885,24 @@ struct UIRequest: Identifiable {
       Task { await loadSubagents() }
     }
     if let m = e["message"] as? Object {
+      let messageID = string(e, "messageId")
       if kind == "message_start" {
-        rawMessages.append(m)
-        updateMessages(immediate: true)
-      } else if ["message_update", "message_end"].contains(kind) {
-        if let last = rawMessages.last, string(last, "role") == string(m, "role") {
-          rawMessages[rawMessages.count - 1] = m
+        if let index = rawMessageIDs[messageID], !messageID.isEmpty {
+          rawMessages[index] = m
         } else {
           rawMessages.append(m)
+          if !messageID.isEmpty { rawMessageIDs[messageID] = rawMessages.count - 1 }
+        }
+        updateMessages(immediate: true)
+      } else if ["message_update", "message_end"].contains(kind) {
+        if let index = rawMessageIDs[messageID], !messageID.isEmpty {
+          rawMessages[index] = m
+        } else if let last = rawMessages.last, string(last, "role") == string(m, "role") {
+          rawMessages[rawMessages.count - 1] = m
+          if !messageID.isEmpty { rawMessageIDs[messageID] = rawMessages.count - 1 }
+        } else {
+          rawMessages.append(m)
+          if !messageID.isEmpty { rawMessageIDs[messageID] = rawMessages.count - 1 }
         }
         updateMessages(immediate: kind == "message_end")
       }
@@ -1026,6 +1168,7 @@ struct UIRequest: Identifiable {
     messageFlush = nil
     messagesDirty = false
     rawMessages = []
+    rawMessageIDs = [:]
     messages = []
     pending = []
     queue = []
@@ -1379,24 +1522,29 @@ private struct MessageActionButton: View {
   var doneLabel = "Kopiert"
   var done = false
   var enabled = true
+  var showsLabel = false
   let action: () -> Void
   @State private var hovering = false
   var body: some View {
     Button(action: action) {
-      Image(systemName: done ? doneSymbol : symbol)
-        .font(.system(size: 11, weight: .medium))
-        .foregroundStyle(
-          done ? accent : hovering ? Color.white.opacity(0.94) : Color.secondary
-        )
-        .frame(width: 22, height: 22)
-        .background(
-          RoundedRectangle(cornerRadius: 6, style: .continuous)
-            .fill(
-              done
-                ? accent.opacity(0.16)
-                : hovering ? Color.white.opacity(0.1) : Color.clear)
-        )
-        .contentShape(Rectangle())
+      HStack(spacing: 5) {
+        Image(systemName: done ? doneSymbol : symbol)
+          .font(.system(size: 11, weight: .medium))
+        if showsLabel {
+          Text(done ? doneLabel : label).font(.system(size: 10, weight: done ? .medium : .regular))
+        }
+      }
+      .foregroundStyle(done ? accent : hovering ? Color.white.opacity(0.94) : Color.secondary)
+      .padding(.horizontal, showsLabel ? 6 : 0)
+      .frame(minWidth: 22, minHeight: 22)
+      .background(
+        RoundedRectangle(cornerRadius: 6, style: .continuous)
+          .fill(
+            done
+              ? accent.opacity(0.16)
+              : hovering ? Color.white.opacity(0.1) : Color.clear)
+      )
+      .contentShape(Rectangle())
     }
     .buttonStyle(.plain)
     .disabled(!enabled)
@@ -1414,13 +1562,13 @@ private struct MessageActions: View {
   var revealed = true
   @State private var copied = false
   var body: some View {
-    HStack(spacing: 4) {
+    HStack(spacing: 7) {
       if kind == .user, let time = formatted(message.sentAt) {
         Text(time).font(.system(size: 10)).foregroundStyle(.tertiary).monospacedDigit()
           .padding(.trailing, 4)
       }
       MessageActionButton(
-        symbol: "doc.on.doc", label: "Kopieren", done: copied
+        symbol: "doc.on.doc", label: "Kopieren", done: copied, showsLabel: true
       ) {
         desk.copyText(message.text)
         copied = true
@@ -1429,18 +1577,14 @@ private struct MessageActions: View {
           copied = false
         }
       }
-      if copied {
-        Text("Kopiert").font(.system(size: 10, weight: .medium)).foregroundStyle(accent)
-          .transition(.opacity)
-      }
       if kind == .user {
-        MessageActionButton(symbol: "pencil", label: "Bearbeiten") {
+        MessageActionButton(symbol: "pencil", label: "Bearbeiten", showsLabel: true) {
           desk.editPrompt(message)
         }
       } else {
         MessageActionButton(
-          symbol: "arrow.turn.up.right", label: "In neuem Chat fortfahren",
-          enabled: !desk.busy && !desk.loading && desk.project != nil
+          symbol: "arrow.turn.up.right", label: "Neuer Chat",
+          enabled: !desk.busy && !desk.loading && desk.project != nil, showsLabel: true
         ) {
           desk.run { try await desk.continueInNewChat(message) }
         }
@@ -1833,11 +1977,18 @@ struct ChatView: View {
   @State private var modeOpen = false
   @State private var thinkingOpen = false
   @State private var pulse = false
+  private var currentTurnStart: Int {
+    desk.messages.lastIndex { $0.role == "user" } ?? -1
+  }
   private var currentTurnTools: [ChatMessage] {
-    let lastUser = desk.messages.lastIndex { $0.role == "user" } ?? -1
-    return desk.messages.enumerated().filter {
-      $0.offset > lastUser && $0.element.role == "toolResult"
+    desk.messages.enumerated().filter {
+      $0.offset > currentTurnStart && $0.element.role == "toolResult"
     }.map(\.element)
+  }
+  private var currentThinking: String {
+    desk.messages.enumerated().filter {
+      $0.offset > currentTurnStart && $0.element.role == "assistant"
+    }.map(\.element.thinking).filter { !$0.isEmpty }.last ?? ""
   }
   var body: some View {
     VStack(spacing: 0) {
@@ -1881,15 +2032,21 @@ struct ChatView: View {
                     UserMessage(message: m, fontSize: chatFontSize, desk: desk)
                   } else if m.role == "toolResult" && !(desk.busy && currentTurnTools.contains(where: { $0.id == m.id })) {
                     ToolActivityGroup(
-                      messages: group.messages, onOpenFile: desk.openFile,
-                      onRevealFile: desk.revealFile, onOpenURL: desk.open)
-                  } else if m.role == "assistant", !m.text.isEmpty {
-                    VStack(alignment: .leading, spacing: 6) {
-                      ChatMarkdown(
-                        text: m.text, fontSize: chatFontSize + 1, onOpenFile: desk.openFile,
-                        onRevealFile: desk.revealFile, onOpenURL: desk.open
-                      )
-                      MessageActions(kind: .assistant, message: m, desk: desk)
+                      messages: group.messages, allMessages: desk.messages,
+                      onOpenFile: desk.openFile, onRevealFile: desk.revealFile,
+                      onOpenURL: desk.open)
+                  } else if m.role == "assistant", !m.text.isEmpty || !m.thinking.isEmpty {
+                    VStack(alignment: .leading, spacing: 9) {
+                      if !m.thinking.isEmpty {
+                        ModelThinking(text: m.thinking)
+                      }
+                      if !m.text.isEmpty {
+                        ChatMarkdown(
+                          text: m.text, fontSize: chatFontSize + 1, onOpenFile: desk.openFile,
+                          onRevealFile: desk.revealFile, onOpenURL: desk.open
+                        )
+                        MessageActions(kind: .assistant, message: m, desk: desk)
+                      }
                     }
                     .frame(maxWidth: 680, alignment: .leading)
                   }
@@ -1914,6 +2071,7 @@ struct ChatView: View {
       if desk.task != nil, desk.busy {
         WorkingStatus(
           startedAt: desk.workStartedAt ?? Date(), tools: currentTurnTools,
+          allMessages: desk.messages, currentThinking: currentThinking,
           waiting: !desk.pending.isEmpty, reduceMotion: reduceMotion
         ).padding(.horizontal, 36).padding(.vertical, 8)
       }

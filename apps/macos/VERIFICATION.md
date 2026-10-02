@@ -2,7 +2,7 @@
 
 ## Verified
 
-- Official macOS arm64 OMP 18.2.1 binary: SHA-256 matches GitHub release digest.
+- Official macOS arm64 OMP 18.4.10 binary: SHA-256 matches GitHub release digest.
 - Node syntax checks for host, transport and browser JS.
 - `node --test test/core.test.mjs`: 2 suites passed (RPC v2 chunk reassembly/invalid sequencing/limits; file containment, symlink escapes, binary and oversized context).
 - `node test/runtime-smoke.mjs`: real OMP RPC-UI process against deterministic local HTTP/SSE model. A write was blocked before approval, denied without creating a file, then approved in a new session and executed. Session resumed after process restart and preserved user messages. Four local model requests, zero external inference.
@@ -72,9 +72,9 @@ Removed macOS shared toolbar capsules and the persistent sidebar search field. V
 
 - Native Settings sections added: selected local skill folders, source preview, search, activation/removal; MCP stdio/HTTP/SSE editors, header/env preservation, activation/removal, connection test and live session inspection. New entries default disabled. Original skill folders are never removed.
 - Five unit tests pass, covering the existing decoder/context/settings plus skill activation/persistence/source errors/original preservation and MCP secret redaction, target-change protection, private permissions and unrelated config preservation.
-- `capabilities-smoke.mjs` passes against real bundled OMP 18.2.1 and isolated local fixtures: skill command and description loaded into model context; MCP initialize/list; deferred xd:// route visible; approval prompt before MCP call; result reaches model/chat; pending-work config changes rejected; disabling removes skills/tools after reload; state and session survive restart. No external inference or user credentials used.
+- `capabilities-smoke.mjs` passes against real bundled OMP and isolated local fixtures: skill command and description loaded into model context; MCP initialize/list; deferred xd:// route visible; approval prompt before MCP call; result reaches model/chat; pending-work config changes rejected; disabling removes skills/tools after reload; state and session survive restart. No external inference or user credentials used.
 - `mcp-transports-smoke.mjs` passes for real OMP HTTP and SSE initialize/list with authorization headers. Neither connection test executes a tool. stdio tool execution is covered by the previous integration test.
-- Integration found two implementation issues and fixed them: diagnostic workers require an explicit model identity even without inference; OMP exposes deferred MCP tools through live system-prompt xd:// routes rather than dumpTools. Live route parsing is version-specific to pinned OMP 18.2.1 and covered by the integration test.
+- Integration found two implementation issues and fixed them: diagnostic workers require an explicit model identity even without inference; OMP exposes deferred MCP tools through live system-prompt xd:// routes rather than dumpTools. Die Erkennung folgt nun der Route selbst statt versionsspezifischem Begleittext und ist durch den Integrationstest abgedeckt.
 - New MCP OAuth login, project overrides, skill repository installation/updates and plugins/hooks are not implemented. Full parity remains open.
 - Native build/signature passed. Final visual/click acceptance for the revised sidebar and new Settings panels remains blocked: computer-use now explicitly reports that the Mac is locked. No claim of visual acceptance or successful final relaunch.
 
@@ -100,6 +100,20 @@ Removed macOS shared toolbar capsules and the persistent sidebar search field. V
 - Remembered approvals also answer requests from background tasks. A rule is stored only after the approval response succeeds. Provider safety prompts and generic confirmations cannot produce a remembered key. Settings exposes the total and clears chat/global rules.
 - `node --test test/*.test.mjs`: 6/6 passed. Final arm64 app build and local signature step passed. No external model request or production file mutation was used for this acceptance.
 
-## Release-Paket vom 29.09.2026
+## Modellgedanken und verständliche Agentenaktivität · 2026-10-02
 
-Neu gebaut: `Pi-Desk-0.1.0-apple-silicon.dmg` (146612103 Bytes). SHA-256: `38c82f48d570f3e55c693ff128bdac89e8cc871c7e4ae8fab63625279fcc7f99`. 13 Tests, neuer nativer Build, strikte tiefe Signaturprüfung und DMG-Integritätsprüfung bestanden. Ad-hoc signiert, nicht notarisiert.
+- Die Ursache der leeren Arbeitsansicht war eine unvollständige native Dekodierung: OMP lieferte `thinking`- und `toolCall`-Blöcke bereits in den Assistant-Nachrichten, Pi Desk las dort aber ausschließlich `text`. Die Modellgedanken werden nun erhalten und als „Gedanken des Modells“ aufklappbar dargestellt.
+- Der laufende „Agent arbeitet“-Bereich startet geöffnet. Er zeigt aktuelle Gedanken sowie verständliche Werkzeugnamen und – wenn OMP ihn mitsendet – den Zweck des Schritts. Historische Arbeitsblöcke zeigen dieselben Namen, Zweck, Status und Ausgabe.
+- Die zuvor nur per Hover-Hilfe erklärten Symbole unter Agentenantworten sind sichtbar mit „Kopieren“ und „Neuer Chat“ beschriftet; eigene Nachrichten zeigen „Kopieren“ und „Bearbeiten“.
+- Swift-Typecheck für alle nativen Quellen, 13/13 macOS-Node-Tests, Impeccable-Detektor, nativer arm64-Build und strikte tiefe Codesign-Prüfung bestanden.
+
+## OMP 18.4.10 und RPC-Verträge · 2026-10-02
+
+- Offizielle Apple-Silicon-Runtime auf SHA-256 `23d3f9ab712fe700e80a43dbd1e8159dfea8e106bf717648a49b1bba1ad3e508` aktualisiert; aktuelle Drittanbieterhinweise übernommen.
+- Das entfernte `hub` wurde durch `wait` ersetzt. OMP-Queue-Snapshots/-Events, `messageId`, strukturierte Promptfehler und `session_settled` sind angebunden; `agent_end` wird nicht mehr vorschnell als Ende sämtlicher Hintergrundarbeit behandelt.
+- Deferred MCP-Routen werden unabhängig vom umgebenden Systemprompt-Text erkannt; das alte und das neue OMP-Format sind kompatibel. `remove_queued_message` entfernt eine noch an OMP übergebene Queue-Nachricht tatsächlich in der Runtime.
+- 13/13 Node-Tests sowie Runtime-, HTTP-, Settings- und Capabilities-Smokes liefen mit der echten OMP-18.4.10-Runtime und lokalen Fixtures erfolgreich. Keine externen Anbieteranfragen und keine Nutzerzugangsdaten.
+
+## Release-Paket vom 02.10.2026
+
+Neu gebaut: `Pi-Desk-0.2.0-apple-silicon.dmg` (155.724.006 Bytes). SHA-256: `9d50f2011a1b3bec83be5ad68d821ca19e3f0ffb65f0e822c64b8f1b7685b82d`. 15 Node-Tests, Runtime-/HTTP-/Settings-/Capabilities-Smokes, Swift-Typecheck, nativer Build, strikte tiefe Signaturprüfung, DMG-Integrität und der Inhalt der gemounteten Disk-Image-App wurden geprüft. Ad-hoc signiert, nicht notarisiert.

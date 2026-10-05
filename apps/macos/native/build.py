@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Build a self-contained, locally signed arm64 macOS .app. Install locked build dependencies with npm ci --ignore-scripts first."""
 from pathlib import Path
-import shutil, subprocess, plistlib, hashlib, os, json
+import shutil, subprocess, plistlib, hashlib, os, json, re
 root=Path(__file__).resolve().parents[1]
 app=root/'dist'/'.stage'/'Pi Desk.app'
 final=root/'dist'/'Pi Desk.app'
@@ -9,6 +9,7 @@ resources=app/'Contents'/'Resources'
 macos=app/'Contents'/'MacOS'
 for folder in [resources,macos]:folder.mkdir(parents=True,exist_ok=True)
 version=json.loads((root/'package.json').read_text())['version']
+if not re.fullmatch(r'^\d+\.\d+\.\d+$',version):raise SystemExit('Version in package.json muss X.Y.Z sein.')
 major,minor,patch=(int(part) for part in version.split('.'))
 if not (0<=minor<100 and 0<=patch<100): raise SystemExit('Version X.Y.Z mit Y, Z < 100 erforderlich (Build-Nummer).')
 build_number=str(major*10000+minor*100+patch)

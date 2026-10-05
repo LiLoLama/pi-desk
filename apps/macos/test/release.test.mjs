@@ -15,4 +15,8 @@ test('changelog sections and build numbers', () => {
   assert.equal(bundleVersion('0.10.0'), '1000');
   assert.throws(() => bundleVersion('0.100.0'), /< 100/);
   assert.throws(() => bundleVersion('0.3'), /X\.Y\.Z/);
+  assert.throws(() => bundleVersion('1..3'), /X\.Y\.Z/);
+  assert.throws(() => bundleVersion('1.2.3.4'), /X\.Y\.Z/);
+  assert.throws(() => bundleVersion('0x1.2.3'), /X\.Y\.Z/);
+  assert.throws(() => bundleVersion('-1.2.3'), /X\.Y\.Z/);
 });

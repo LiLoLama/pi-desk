@@ -24,8 +24,8 @@ export const renderEntry = entry => `## ${entry.version}${entry.date ? ` – ${e
 
 // Sparkle compares CFBundleVersion; build.py derives the same number.
 export function bundleVersion(version) {
+  if (!/^\d+\.\d+\.\d+$/.test(version)) throw Error(`Version ${version} muss X.Y.Z sein.`);
   const parts = String(version).split('.').map(Number);
-  if (parts.length !== 3 || !parts.every(n => Number.isInteger(n) && n >= 0)) throw Error(`Version ${version} muss X.Y.Z sein.`);
   if (parts[1] > 99 || parts[2] > 99) throw Error(`Version ${version}: Y und Z müssen < 100 sein.`);
   return String(parts[0] * 10000 + parts[1] * 100 + parts[2]);
 }

@@ -7,7 +7,7 @@ const {section}=createRequire(import.meta.url)('../desktop/changelog.cjs');
 export const releaseNotes=(changelog,version)=>`${section(changelog,version).body}
 
 ---
-Windows x64. Setup ohne Administratorrechte. Nicht signiert: SmartScreen kann beim ersten Start warnen („Weitere Informationen“ → „Trotzdem ausführen“). Ab dieser Version aktualisiert sich Pi Desk selbst. SHA-256 in SHA256SUMS-windows.txt.`;
+Windows x64. Bei der Installation „Nur für mich“ wählen – dann sind keine Administratorrechte nötig und Updates laufen ohne Rückfrage. Nicht signiert: SmartScreen kann beim ersten Start warnen („Weitere Informationen“ → „Trotzdem ausführen“). Ab dieser Version aktualisiert sich Pi Desk selbst. SHA-256 in SHA256SUMS-windows.txt.`;
 if(process.argv[1]===fileURLToPath(import.meta.url)){
  const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
  const {version}=JSON.parse(await readFile(path.join(root,'package.json'),'utf8'));

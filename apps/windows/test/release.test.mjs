@@ -32,7 +32,7 @@ test('feed keeps at most ten sections',()=>{
 });
 test('release notes contain the section and the installation hint',()=>{
  const notes=releaseNotes(changelog,'0.4.0');
- assert.match(notes,/^- Updates/);assert.match(notes,/SmartScreen/);assert.doesNotMatch(notes,/Zukunft/);
+ assert.match(notes,/^- Updates/);assert.match(notes,/SmartScreen/);assert.match(notes,/„Nur für mich“ wählen/);assert.doesNotMatch(notes,/Zukunft/);
 });
 const name='Pi-Desk-0.4.0-Windows-x64-Setup.exe',feedYaml=feedFromRelease(latest,{tag:'windows-v0.4.0',version:'0.4.0',changelog});
 const view=(over={})=>({isDraft:true,assets:[{name:'latest.yml',size:9},{name,size:123}],...over});

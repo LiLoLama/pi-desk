@@ -1,6 +1,7 @@
 Pi Desk für Windows – Version 0.4.0 (x64)
 
-1. Pi-Desk-0.4.0-Windows-x64-Setup.exe ausführen. Keine Administratorrechte nötig.
+1. Pi-Desk-0.4.0-Windows-x64-Setup.exe ausführen. Bei der Installation „Nur für mich“
+   wählen – dann sind keine Administratorrechte nötig und Updates laufen ohne Rückfrage.
    Windows SmartScreen kann warnen, weil das Setup nicht signiert ist:
    „Weitere Informationen“ → „Trotzdem ausführen“.
 2. Pi Desk über das Startmenü oder die Desktopverknüpfung öffnen.

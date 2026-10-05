@@ -17,7 +17,8 @@ sign_id=os.environ.get('PI_DESK_SIGN_ID','')
 sparkle=root/'vendor'/'sparkle'/'Sparkle.framework'
 if not sparkle.is_dir(): raise SystemExit('Sparkle fehlt. Zuerst: npm run sparkle')
 public_key=(root/'native'/'sparkle-public-key.txt').read_text().strip()
-if len(public_key)<40 or 'PRIVATE' in public_key: raise SystemExit('native/sparkle-public-key.txt enthält keinen öffentlichen Sparkle-Schlüssel.')
+# A Sparkle EdDSA public key is exactly 32 bytes of Ed25519, base64: 43 characters plus one '='.
+if not re.fullmatch(r'[A-Za-z0-9+/]{43}=',public_key): raise SystemExit('native/sparkle-public-key.txt enthält keinen öffentlichen Sparkle-Schlüssel.')
 
 def is_mach_o(path):
   try:

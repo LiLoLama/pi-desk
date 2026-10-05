@@ -1,7 +1,7 @@
 // Release flow: `draft` builds, notarizes and uploads an unpublished GitHub release; `publish` makes it live after confirmation.
 import {spawnSync} from 'node:child_process';
 import {createHash} from 'node:crypto';
-import {mkdir,readFile,rm,symlink,writeFile} from 'node:fs/promises';
+import {cp,mkdir,readFile,rm,symlink,writeFile} from 'node:fs/promises';
 import path from 'node:path';
 import readline from 'node:readline/promises';
 import {fileURLToPath} from 'node:url';
@@ -43,6 +43,10 @@ async function draft() {
   const head = git(['rev-parse', 'HEAD']);
   if (head !== git(['rev-parse', 'origin/main'])) throw Error('Erst committen und pushen: Release wird aus origin/main gebaut.');
   run('node', ['scripts/install-sparkle.mjs']);
+  // The feed is signed with the keychain key; the app only accepts updates signed for the key it ships with.
+  const keychainKey = run(path.join(root, 'vendor/sparkle/bin/generate_keys'), ['-p'], {capture: true}).trim();
+  const shippedKey = (await readFile(path.join(root, 'native', 'sparkle-public-key.txt'), 'utf8')).trim();
+  if (keychainKey !== shippedKey) throw Error('Sparkle-Schlüssel im Schlüsselbund passt nicht zu native/sparkle-public-key.txt – Updates würden abgelehnt.');
   run('python3', ['native/build.py']);
   const plist = path.join(app, 'Contents', 'Info.plist');
   const build = run('plutil', ['-extract', 'CFBundleVersion', 'raw', plist], {capture: true});
@@ -59,6 +63,8 @@ async function draft() {
   await mkdir(stage);
   run('ditto', [app, path.join(stage, 'Pi Desk.app')]);
   await symlink('/Applications', path.join(stage, 'Programme'));
+  // Third-party licenses travel with the download, not only inside the app bundle.
+  await cp(path.join(root, 'licenses'), path.join(stage, 'Lizenzen'), {recursive: true});
   await writeFile(path.join(stage, 'Lesen.txt'), `Pi Desk ${version} · Apple Silicon · macOS 14 oder neuer
 
 1. Pi Desk in den Ordner Programme ziehen.
@@ -67,6 +73,7 @@ async function draft() {
 Updates kommen danach automatisch: Pi Desk zeigt vor jeder Installation, was neu ist.
 Die App enthält Node und OMP 18.4.10. Keine zusätzliche Installation nötig.
 Intel-Macs werden nicht unterstützt.
+Drittanbieter-Lizenzen liegen im Ordner Lizenzen.
 `);
   await rm(dmg, {force: true});
   run('hdiutil', ['create', '-volname', 'Pi Desk', '-srcfolder', stage, '-ov', '-format', 'UDZO', dmg]);
@@ -107,9 +114,14 @@ async function publish() {
   rl.close();
   if (answer !== 'ja') return console.log('Abgebrochen. Nichts veröffentlicht.');
   run('gh', ['release', 'edit', tag, '--repo', REPO, '--draft=false']);
-  run('git', ['add', '--', relative], {cwd: repo});
-  run('git', ['commit', '-m', `macOS ${version} ausrollen`, '--', relative], {cwd: repo});
-  run('git', ['push'], {cwd: repo});
+  try {
+    run('git', ['add', '--', relative], {cwd: repo});
+    run('git', ['commit', '-m', `macOS ${version} ausrollen`, '--', relative], {cwd: repo});
+    run('git', ['push'], {cwd: repo});
+  } catch (error) {
+    console.error(`${error.message}\nRelease ist öffentlich, Feed aber nicht gepusht: updates/macos/appcast.xml manuell committen und pushen.`);
+    process.exit(1);
+  }
   console.log('Ausgerollt. Nutzer sehen das Update spätestens nach ihrer nächsten Prüfung (raw-Cache ca. 5 Minuten).');
 }
 

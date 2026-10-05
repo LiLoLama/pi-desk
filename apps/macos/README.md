@@ -23,7 +23,7 @@ npm run sparkle
 python3 native/build.py
 ```
 
-`npm run sparkle` lädt Sparkle 2.10.0 SHA-256-geprüft nach `vendor/`. Erfordert Xcode/Swift, Node.js 22+ und die gepinnte OMP-Runtime (`node install-runtime.mjs`). `native/PiDesk.swift` enthält Oberfläche, API-Adapter und App-Lifecycle. Das Skript erstellt das Icon, bündelt die Laufzeiten und prüft die Codesignatur. Mit gesetztem `PI_DESK_SIGN_ID` (Developer-ID-Name) signiert es mit Hardened Runtime; ohne entsteht ein ad-hoc signierter Entwicklungs-Build (`PIDeskDevBuild`), der den Update-Feed über `PI_DESK_UPDATE_FEED` überschreiben lässt. `PI_DESK_TEST_FEED_BUILD=1` ist nur für lokale Tests gedacht; das Release-Skript weist solche Builds ab. Es kopiert nur eine echte Node-Mach-O-Binary, keine Wrapper-Skripte (Goose/Hermit). Optional `PI_DESK_NODE` auf den gewünschten `node`-Pfad setzen. Der YAML-Parser wird über den Lockfile installiert und mit der App gebündelt. Für Benutzer der fertigen App ist keine Installation im Terminal nötig.
+`npm run sparkle` lädt Sparkle 2.10.0 SHA-256-geprüft nach `vendor/`. Erfordert Xcode/Swift, Node.js 22+ und die gepinnte OMP-Runtime (`node install-runtime.mjs`). `native/PiDesk.swift` enthält Oberfläche, API-Adapter und App-Lifecycle. Das Skript erstellt das Icon, bündelt die Laufzeiten und prüft die Codesignatur. Mit gesetztem `PI_DESK_SIGN_ID` (Developer-ID-Name) signiert es mit Hardened Runtime; ohne entsteht ein ad-hoc signierter Entwicklungs-Build (`PIDeskDevBuild`), der den Update-Feed über `PI_DESK_UPDATE_FEED` überschreiben lässt. `PI_DESK_TEST_FEED_BUILD=1` markiert auch einen signierten Build als Entwicklungs-Build, damit er `PI_DESK_UPDATE_FEED` akzeptiert. Es ist nur für lokale Tests gedacht; das Release-Skript weist solche Builds ab. Es kopiert nur eine echte Node-Mach-O-Binary, keine Wrapper-Skripte (Goose/Hermit). Optional `PI_DESK_NODE` auf den gewünschten `node`-Pfad setzen. Der YAML-Parser wird über den Lockfile installiert und mit der App gebündelt. Für Benutzer der fertigen App ist keine Installation im Terminal nötig.
 
 ### Browser-Entwicklungsansicht
 
@@ -63,9 +63,9 @@ Einmalig: Sparkle-Schlüssel (`vendor/sparkle/bin/generate_keys`, privat im Schl
 1. Version in `package.json` erhöhen, Abschnitt in `CHANGELOG.md` schreiben.
 2. `PI_DESK_SIGN_ID="Developer ID Application: …" PI_DESK_NOTARY_PROFILE=pi-desk-notary npm run release:draft`: Build, Notarisierung, DMG, EdDSA-Signatur, Entwurfs-Release `macos-vX.Y.Z`, lokale Änderung an `updates/macos/appcast.xml`. Das Skript prüft vorab Branch `main`, sauberen Arbeitsbaum und `HEAD == origin/main` und weist Test-Feed-Builds ab.
 3. Entwurf herunterladen und testen.
-4. `npm run release:publish` veröffentlicht nach Rückfrage („ja“) das Release, prüft Entwurf und DMG-Größe gegen den Feed, committet nur den Feed und pusht `main`.
+4. `npm run release:publish` prüft zuerst Entwurf und DMG-Größe gegen den Feed und fragt erst danach („ja“). Dann veröffentlicht es das Release, committet nur den Feed und pusht `main`. Beide Release-Befehle brauchen eine angemeldete `gh`-CLI; das Release bleibt als Vorabversion markiert (`--prerelease`).
 
-Zurückrollen: Feed-Commit zurücksetzen. Bereits aktualisierte Installationen bleiben auf der Version.
+Zurückrollen: Feed-Commit zurücksetzen und den Revert pushen. `raw.githubusercontent.com` cached etwa 5 Minuten, bis dahin liefert der Feed noch den alten Stand. Das GitHub-Release bleibt öffentlich, bis es manuell zurückgezogen wird. Bereits aktualisierte Installationen bleiben auf der Version.
 
 ## Grenzen dieser ersten Version
 

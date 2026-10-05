@@ -1,8 +1,10 @@
-# Verification · 2026-09-16
+# Verification
+
+Der Abschnitt „0.3.0 – Updates“ steht oben und gilt für den aktuellen Stand. Die älteren, meist englischen Abschnitte darunter folgen chronologisch (ab 16.09.2026) und beschreiben jeweils den Stand ihres Datums.
 
 ## 0.3.0 – Updates · 05.10.2026
 
-Automatische Updates über Sparkle 2.10.0 (Archiv-SHA-256 `c2bf58aa8387266ac179357b1415d6f2635f044da8be41042af32425dae6da0c`, per `npm run sparkle` gepinnt) mit eigener SwiftUI-Oberfläche (`SPUUserDriver`), Feed `updates/macos/appcast.xml`, Developer-ID-Signatur mit Hardened Runtime. Die folgenden Abschnitte stammen aus den Prüfläufen der Aufgaben 1 bis 7 auf dem Entwicklungs-Mac. Ein Update-Lauf mit echtem Download und ein Release sind noch nicht erfolgt (siehe „Offen“).
+Automatische Updates über Sparkle 2.10.0 (Archiv-SHA-256 `c2bf58aa8387266ac179357b1415d6f2635f044da8be41042af32425dae6da0c`, per `npm run sparkle` gepinnt) mit eigener SwiftUI-Oberfläche (`SPUUserDriver`), Feed `updates/macos/appcast.xml`, Developer-ID-Signatur mit Hardened Runtime. Die folgenden Ergebnisse stammen aus Prüfläufen auf dem Entwicklungs-Mac. Ein Update-Lauf mit echtem Download und ein Release sind noch nicht erfolgt (siehe „Offen“).
 
 ### Nachgewiesen
 
@@ -11,17 +13,20 @@ Automatische Updates über Sparkle 2.10.0 (Archiv-SHA-256 `c2bf58aa8387266ac1793
 - Dialog gegen einen lokalen Testfeed (`http://127.0.0.1:8899/appcast.xml`, Dev-Build mit isoliertem `PI_DESK_DATA`): Der Feed wurde rund 11 s nach dem Start abgerufen (passt zur Prüfung 10 s nach dem Start). Der Screenshot zeigte „Pi Desk 0.3.1 ist verfügbar“, „Du hast 0.3.0.“, den Changelog im Quiet-Studio-Dark-Design sowie die Knöpfe „Diese Version überspringen“, „Später“ und „Jetzt aktualisieren“. Das App-Menü enthält „Nach Updates suchen …“ direkt nach „Über Pi Desk“ (lesend per Skript geprüft).
 - Markdown-Listenpunkte: Im Screenshot standen sie über der Textzeile. Behoben im gemeinsamen Renderer (`native/Markdown.swift`, erste Grundlinie); das wirkt auch auf Listen im Chat. Nach dem Fix nur per Offscreen-Rendering geprüft (Punkte und Nummern links neben dem Text auf einer Grundlinie), nicht erneut im sichtbaren Dialog, weil der Bildschirm gesperrt war.
 - Developer-ID-Build (`PI_DESK_SIGN_ID` gesetzt): Signatur der App, von `Autoupdate`, `Updater.app`, `Installer.xpc`, `Downloader.xpc`, `Sparkle.framework` und `node` mit Hardened Runtime (`flags=0x10000(runtime)`), Zeitstempel und Developer-ID-Autorität. `node` trägt die Entitlements `allow-jit` und `allow-unsigned-executable-memory`; `omp` behält die Signatur von Can Boluk. `codesign --verify --deep --strict` bestanden, `PIDeskDevBuild` fehlt wie vorgesehen. `spctl` meldet erwartungsgemäß `rejected, source=Unnotarized Developer ID`, da noch nicht notarisiert.
-- Laufzeit unter Hardened Runtime: `node` führt dynamischen Code aus (JIT, Ergebnis 42), `omp --version` meldet `omp/18.4.10`, die App startete ihren Host, eine OMP-Sitzung wurde über die lokale API geladen (`omp --mode rpc-ui` als Kindprozess). Im Unified Log und bei Absturzberichten keine Codesignatur- oder JIT-Fehler. Ohne Modellanfrage und mit isoliertem Datenordner.
+- Laufzeit unter Hardened Runtime: `node` führt dynamischen Code aus (JIT, Ergebnis 42), `omp --version` meldet `omp/18.4.10`, die App startete ihren Host, eine OMP-Sitzung wurde über die lokale API geladen (`omp --mode rpc-ui` als Kindprozess). Im Unified Log und bei Absturzberichten keine Codesignatur- oder JIT-Fehler. Mit isoliertem Datenordner.
 - Release-Skript (`scripts/release.mjs`): geprüft wurden nur Syntax (`node --check`) und der Aufruf ohne Argument (Verwendung, Exit 1) sowie die Hilfsfunktionen über die Tests. `draft` und `publish` wurden nie ausgeführt. Vorabprüfungen im Code: Version noch nicht im Feed, Release-Tag noch nicht vorhanden, Branch `main`, sauberer Arbeitsbaum, `HEAD == origin/main`, kein gesetztes `PI_DESK_TEST_FEED_BUILD`, kein `PIDeskDevBuild` im Build; `publish` prüft Entwurf und DMG-Größe gegen den Feed.
 
 ### Offen
 
-- Task 8, Update-Lauf 0.3.0 → 0.3.1 mit echtem DMG: Download, EdDSA-Prüfung, Neustart in die neue Version, Busy-Regel (nur laden und beim Beenden installieren, solange gearbeitet wird), Abweisen eines manipulierten DMG und Hinweis bei App im Disk-Image. Dieser Lauf hat nicht stattgefunden.
-- Interaktive Klickpfade des Dialogs und der Einstellungen: „Später“, „Diese Version überspringen“, Menüpunkt „Nach Updates suchen …“, Einstellungen → Updates (Version, letzte Prüfung, Schalter), „… ist aktuell“, Fehlerdialog mit „Erneut versuchen“ und der Ortshinweis. Der Dialog-Screenshot entstand vor den Korrekturen der Review-Runden und ist bei entsperrtem Bildschirm zu wiederholen.
-- Doppelte Beenden-Rückfrage: Ob nach „Jetzt neu starten“ bei laufender Arbeit genau eine Rückfrage erscheint, ist ungeprüft (unbekannt, ob Sparkle `dismissUpdateInstallation` vor dem Beenden aufruft; schlimmstenfalls zweimal fragen, nie ohne Rückfrage).
+- Update-Lauf 0.3.0 → 0.3.1 mit echtem DMG: Download, EdDSA-Prüfung, Neustart in die neue Version, Busy-Regel (nur laden und beim Beenden installieren, solange gearbeitet wird), Abweisen eines manipulierten DMG und Hinweis bei App im Disk-Image. Dieser Lauf hat nicht stattgefunden.
+- Interaktive Klickpfade des Dialogs und der Einstellungen: „Später“, „Diese Version überspringen“, Menüpunkt „Nach Updates suchen …“, Einstellungen → Updates (Version, letzte Prüfung, Schalter), „… ist aktuell“, Fehlerdialog mit „Erneut versuchen“ und der Ortshinweis. Der Dialog-Screenshot entstand vor den Korrekturen nach dem Code-Review und ist bei entsperrtem Bildschirm zu wiederholen.
+- Doppelte Beenden-Rückfrage: Ob nach „Jetzt neu starten“ bei laufender Arbeit genau eine Rückfrage erscheint, ist ungeprüft. Es ist unbekannt, ob Sparkle vor dem Beenden noch einmal die Installation abbricht und damit die Rückfrage doppelt erscheint. Vorgesehen ist laut Code, dass das Beenden den Arbeitszustand immer neu prüft und bei laufender Arbeit fragt; das ist nicht getestet.
 - Notarisierung und Stapling von App und DMG sowie die `spctl`-Annahme (`source=Notarized Developer ID`) nach der Notarisierung: noch nicht erfolgt. Bis dahin steht hier nur das Ergebnis „Unnotarized Developer ID“.
 - Lokale GGUF-Engine (llama.cpp) unter Hardened Runtime: nicht gestartet, ob sie ohne weitere Entitlements läuft, ist ungeprüft.
 - Entwurfs-Release `macos-v0.3.0`, Download des Entwurfs und Start ohne Gatekeeper-Warnung: nicht erfolgt. Auch der erste echte Lauf von `release:draft` und `release:publish`, die Rückfrage vor dem Veröffentlichen und das Verhalten von `gh` (unter anderem `--prerelease` bleibt nach `publish` gesetzt) stehen aus.
+- Hintergrund-Angebot: Ein automatisch gefundenes Update soll den Fokus nicht an sich ziehen (andere App vorn lassen); nicht geprüft.
+- „Beim Beenden installieren“ und danach „Nach Updates suchen …“: soll nur den „bereit“-Dialog zeigen und nicht neu starten; nicht geprüft.
+- Sichtprüfung des Fensters der signierten Developer-ID-App: Der Lauf unter Hardened Runtime wurde nur über Prozesse und die lokale API belegt, das Fenster war nicht sichtbar (Bildschirm gesperrt).
 - Update über den echten GitHub-Feed: erst möglich, wenn 0.3.0 veröffentlicht ist und eine spätere Version (0.3.1) im Feed steht. Bis dahin lief der Updater nur gegen lokale Testfeeds.
 - Der Dev-Build teilt die Defaults-Domain `studio.pidesk.mac` mit der installierten App; „Diese Version überspringen“ im Dev-Build würde dort `SUSkippedVersion` setzen. Nach Tests die `SU*`-Schlüssel dieser Domain prüfen.
 
@@ -40,7 +45,7 @@ No external provider login was completed by the agent and no paid/model-subscrip
 
 ## Deliberate first-version boundaries
 
-Text source preview, no running web preview. No Developer-ID/notarized distribution, subagent UI or terminal emulator. Chat Markdown is rendered natively as attributed text, not HTML. Tool approvals are not an OS sandbox. Git diff represents the complete working tree, including preexisting changes. Shutdown does not resume an interrupted generation automatically.
+Text source preview, no running web preview. No Developer-ID/notarized distribution (Stand 16.09.2026; ab 0.3.0 siehe oben), subagent UI or terminal emulator. Chat Markdown is rendered natively as attributed text, not HTML. Tool approvals are not an OS sandbox. Git diff represents the complete working tree, including preexisting changes. Shutdown does not resume an interrupted generation automatically.
 
 
 ## Native macOS acceptance · 2026-09-16

@@ -51,7 +51,7 @@ PI_DESK_OMP="$PWD/../macos/runtime/omp" npm start
 
 Build-Ergebnisse bleiben in `apps/macos/dist` bzw. `apps/windows/dist`. Abhängigkeiten, Runtime-Binaries und Builds sind lokal vorhanden, aber von Git ausgeschlossen. Für GitHub werden fertige Pakete als Release-Anhänge veröffentlicht, nicht als Quelldateien eingecheckt.
 
-Die Release-Pakete werden getrennt pro Plattform angeboten. Beide Apps enthalten OMP 18.4.10. Das macOS-Paket wurde am 02.10.2026 aus dem Repository gebaut; Windows 0.4.0 wird über den Workflow „Windows-Release“ auf GitHub gebaut. Die plattformspezifischen Prüfberichte und Release-Hinweise benennen die verbleibenden Grenzen; insbesondere ersetzt ein macOS-Test keinen echten Windows-Lauf.
+Die Release-Pakete werden getrennt pro Plattform angeboten. Beide Apps enthalten OMP 18.4.10. macOS 0.3.0 wird mit `npm run release:draft` gebaut und notarisiert; Windows 0.4.0 wird über den Workflow „Windows-Release“ auf GitHub gebaut. Die plattformspezifischen Prüfberichte und Release-Hinweise benennen die verbleibenden Grenzen; insbesondere ersetzt ein macOS-Test keinen echten Windows-Lauf.
 
 Update-Feeds liegen unter `updates/` und werden erst beim Ausrollen committet. Ablauf je Plattform im jeweiligen App-README.
 

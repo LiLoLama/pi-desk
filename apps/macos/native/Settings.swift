@@ -11,6 +11,7 @@ private enum SettingsSection: String, CaseIterable, Identifiable {
   case agent = "Agent"
   case appearance = "Darstellung"
   case shortcuts = "Tastaturkürzel"
+  case updates = "Updates"
   var id: String { rawValue }
   var symbol: String {
     switch self {
@@ -23,6 +24,7 @@ private enum SettingsSection: String, CaseIterable, Identifiable {
     case .agent: "slider.horizontal.3"
     case .appearance: "textformat.size"
     case .shortcuts: "keyboard"
+    case .updates: "arrow.triangle.2.circlepath"
     }
   }
 }
@@ -170,12 +172,13 @@ struct DeskSettingsView: View {
           case .mcp: CapabilitySettingsView(desk: desk, skillsMode: false).id("mcp")
           case .plugins: ExtensionSettingsView(desk: desk).id("plugins")
           case .rules: ScrollView { ProjectRulesView(desk: desk).padding(.bottom, 16) }
-          case .agent, .appearance, .shortcuts:
+          case .agent, .appearance, .shortcuts, .updates:
             ScrollView {
               Group {
                 switch section {
                 case .agent: agentContent
                 case .appearance: appearanceContent
+                case .updates: UpdateSettingsView(updates: AppUpdates.shared)
                 default: ShortcutSettings()
                 }
               }.frame(maxWidth: .infinity, alignment: .topLeading).padding(.bottom, 16)

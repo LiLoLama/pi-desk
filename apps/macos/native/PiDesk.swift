@@ -383,6 +383,17 @@ struct UIRequest: Identifiable {
   @Published var showLogin = false
   @Published var showLibrary = false
   @Published var loginBusy = false
+  /// Work an update restart would interrupt; quitting asks about the same state.
+  var updateBlocked: Bool { busy || loginBusy || tasks.contains { $0.busy } }
+  static func confirmQuitWhileBusy() -> Bool {
+    let alert = NSAlert()
+    alert.messageText = "Pi Desk beenden?"
+    alert.informativeText =
+      "Ein Vorgang läuft noch. Beim Beenden wird er angehalten; gespeicherte Nachrichten bleiben erhalten."
+    alert.addButton(withTitle: "Beenden")
+    alert.addButton(withTitle: "Weiterarbeiten")
+    return alert.runModal() == .alertFirstButtonReturn
+  }
   @Published var providers: [Object] = []
   @Published var loginRequests: [UIRequest] = []
   @Published var loginNotice = ""
@@ -3225,6 +3236,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     NSApp.activate(ignoringOtherApps: true)
     Task { @MainActor in
       Desk.shared.start()
+      AppUpdates.shared.start()
       #if PI_DESK_PETS
         PetWindow.shared.start()
       #endif
@@ -3235,17 +3247,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
   }
   func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool { true }
   func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
-    let running = MainActor.assumeIsolated { Desk.shared.busy || Desk.shared.loginBusy }
-    if running {
-      let alert = NSAlert()
-      alert.messageText = "Pi Desk beenden?"
-      alert.informativeText =
-        "Ein Vorgang läuft noch. Beim Beenden wird er angehalten; gespeicherte Nachrichten bleiben erhalten."
-      alert.addButton(withTitle: "Beenden")
-      alert.addButton(withTitle: "Weiterarbeiten")
-      if alert.runModal() != .alertFirstButtonReturn { return .terminateCancel }
+    MainActor.assumeIsolated {
+      guard Desk.shared.updateBlocked, !AppUpdates.shared.confirmedRestart else { return .terminateNow }
+      return Desk.confirmQuitWhileBusy() ? .terminateNow : .terminateCancel
     }
-    return .terminateNow
   }
 }
 @main struct PiDeskApp: App {
@@ -3255,6 +3260,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
   var body: some Scene {
     Window("Pi Desk", id: "main") { MainView(desk: desk) }.defaultSize(width: 1180, height: 800)
       .windowStyle(.hiddenTitleBar).commands {
+        CommandGroup(after: .appInfo) {
+          Button("Nach Updates suchen …") { AppUpdates.shared.checkNow() }
+        }
         CommandGroup(replacing: .newItem) {
           Button("Neue Aufgabe") { desk.run { try await desk.newTask() } }.keyboardShortcut(
             shortcuts.shortcut(.newTask))

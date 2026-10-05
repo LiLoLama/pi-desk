@@ -127,3 +127,11 @@ Neu gebaut: `Pi-Desk-0.2.0-apple-silicon.dmg` (155.724.006 Bytes). SHA-256: `9d5
 - Nur lesend gegen sechs vorhandene Modelle im LM-Studio-Ordner geprüft (MLX und GGUF): Trainingslängen 128k–256k erkannt, Bedarf plausibel. Bei Gemma 4, gpt-oss und hybriden Qwen-Modellen liegt die Schätzung zu hoch, weil Sliding-Window-/lineare Attention nicht herausgerechnet wird.
 - Gebaute App (`native/build.py`, Signatur geprüft) mit isoliertem `PI_DESK_DATA`-Profil: Modellzeilen zeigen „trainiert bis …“ und die Kontextauswahl mit Bedarf; eine geänderte Auswahl (Gemma 4 auf 64k) bleibt nach Neustart erhalten. Beschriftung einzeilig, Menüfelder in Inhaltsbreite linksbündig. Das Aufklappen gesperrter Menüeinträge wurde nicht per Bildschirmfoto belegt.
 - Nicht geprüft: echte GGUF-/MLX-Inferenz mit großem Kontext.
+
+## Kanonischer Downloadordner lokaler Modelle · 05.10.2026
+
+- `init()` legte den Downloadordner als Rohpfad `<Daten>/local-models/models` in `local-models.json` ab, alle anderen Ordner per `realpath`. Lag das Datenverzeichnis hinter einem Symlink (z. B. `/var` → `/private/var`, `/tmp` → `/private/tmp`), scheiterte der Download in genau diesen Ordner mit „Bitte einen verbundenen Modellordner wählen.“; auch der Schutz gegen das Trennen des Downloadordners und die Vorschlagsliste verglichen Rohpfade.
+- Downloadordner wird nach `mkdir` per `realpath` gespeichert. Beim Laden werden bestehende Einträge kanonisiert und dedupliziert; nur bei Änderung wird die Datei neu geschrieben. Übrige Einstellungen wie `contexts` bleiben unverändert (Modell-IDs basieren ohnehin auf kanonischen Pfaden). Nicht mehr vorhandene Ordner bleiben erhalten (`path.resolve` als Rückfall), damit der Scan sie weiter als Fehler zeigt.
+- Download-Zielprüfung (`downloadTarget`) und Vorschläge vergleichen kanonische Pfade.
+- Neuer Test: Datenverzeichnis über Symlink, Altprofil mit Rohpfad, Duplikat und Kontextwert → Ordnerliste kanonisch und dedupliziert, `contexts` erhalten, Download-Ziel über Roh- und kanonischen Pfad akzeptiert, fremder Ordner abgewiesen, Downloadordner nicht trennbar; frisches Profil ebenso. 20/20 Node-Tests bestanden.
+- Nicht geprüft: echter Hugging-Face-Download und die native App mit symlinktem `PI_DESK_DATA`.

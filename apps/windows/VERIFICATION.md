@@ -1,5 +1,12 @@
 # Windows-Port 0.3.1 – Prüfstand 05.10.2026
 
+## Kanonischer Downloadordner lokaler Modelle · 05.10.2026
+
+- `init()` legte den Downloadordner als Rohpfad `<Daten>\local-models\models` in `local-models.json` ab, alle anderen Ordner per `realpath`. Bei nicht-kanonischen Datenpfaden (Windows: 8.3-Kurznamen wie `C:\Users\LIAMSC~1\…`, Junctions; macOS: `/var` → `/private/var`) scheiterte der Download in genau diesen Ordner mit „Bitte einen verbundenen Modellordner wählen.“; auch der Trennschutz des Downloadordners und die Vorschläge verglichen Rohpfade.
+- Downloadordner wird nach `mkdir` per `realpath` gespeichert; bestehende Einträge werden beim Laden kanonisiert und dedupliziert, `contexts` und übrige Einstellungen bleiben erhalten. Download-Zielprüfung (`downloadTarget`) und Vorschläge vergleichen kanonische Pfade.
+- Neuer Test (Datenverzeichnis über Symlink/Junction, Altprofil mit Rohpfad, Duplikat und Kontextwert, frisches Profil): auf macOS 20/20 Node-Tests bestanden.
+- Auf Windows offen: Testlauf auf einem Windows-Rechner, insbesondere mit 8.3-Kurznamen im Profilpfad und einer Junction; echter Download in den Standardordner.
+
 ## Kontextlänge lokaler Modelle · 05.10.2026
 
 Anlass: Rückmeldung aus der Community unter Windows. Ministral 3 3B (GGUF, CPU) scheiterte mit Fehler 400, weil die Engine fest mit 8.192 Tokens Kontext startete und der Agenten-Prompt bereits rund 9.900 Tokens hatte.

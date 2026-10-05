@@ -1,5 +1,5 @@
 // User-facing release notes: CHANGELOG.md sections "## X.Y.Z – DD.MM.YYYY".
-const heading = /^## (\d+\.\d+\.\d+)(?:\s+[–-]\s+(.+?))?\s*$/;
+const heading = /^## (\d+\.\d+\.\d+)(?:\s+[–—-]\s+(.+?))?\s*$/;
 
 export function parseChangelog(text) {
   const entries = [];

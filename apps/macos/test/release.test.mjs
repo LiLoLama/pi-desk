@@ -53,3 +53,7 @@ test('reads sign_update output', () => {
   assert.deepEqual(parseSignature('sparkle:edSignature="abc+/=" length="155724006"\n'), {signature: 'abc+/=', length: '155724006'});
   assert.throws(() => parseSignature('error'), /keine Signatur/);
 });
+
+test('accepts em dash and hyphen as date separators', () => {
+  assert.deepEqual(parseChangelog('## 1.0.0 — 01.01.2026\n\n- A\n\n## 0.9.0 - 02.12.2025\n\n- B').map(e => [e.version, e.date, e.body]), [['1.0.0', '01.01.2026', '- A'], ['0.9.0', '02.12.2025', '- B']]);
+});

@@ -1,5 +1,5 @@
 // User-facing release notes: CHANGELOG.md sections "## X.Y.Z – DD.MM.YYYY".
-const heading=/^## (\d+\.\d+\.\d+)(?:\s+[–-]\s+(.+?))?\s*$/;
+const heading=/^## (\d+\.\d+\.\d+)(?:\s+[–—-]\s+(.+?))?\s*$/;
 function parseChangelog(text){
  const entries=[];let current=null;
  for(const line of String(text??'').split(/\r?\n/)){const match=line.match(heading);if(match){current={version:match[1],date:match[2]||'',lines:[]};entries.push(current);}else if(current)current.lines.push(line);}

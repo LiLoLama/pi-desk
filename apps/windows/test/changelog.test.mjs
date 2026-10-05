@@ -40,3 +40,6 @@ test('requires a non-empty section for a release',()=>{
  assert.throws(()=>section(text,'0.6.0'),/keinen Abschnitt für 0\.6\.0/);
  assert.throws(()=>section('## 0.6.0\n\n','0.6.0'),/keinen Abschnitt/);
 });
+test('accepts em dash and hyphen as date separators',()=>{
+ assert.deepEqual(parseChangelog('## 1.0.0 — 01.01.2026\n\n- A\n\n## 0.9.0 - 02.12.2025\n\n- B').map(e=>[e.version,e.date,e.body]),[['1.0.0','01.01.2026','- A'],['0.9.0','02.12.2025','- B']]);
+});

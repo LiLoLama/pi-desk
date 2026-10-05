@@ -4,7 +4,7 @@ Eigenständiger Windows-Port in einem eigenen Ordner. Die native Mac-App bleibt 
 
 ## Start auf Windows
 
-1. `Pi-Desk-0.4.0-Windows-x64-Setup.exe` ausführen (keine Administratorrechte). Pi Desk aus Startmenü oder Desktopverknüpfung öffnen.
+1. `Pi-Desk-0.4.0-Windows-x64-Setup.exe` ausführen (Installation nur für den eigenen Benutzer, keine Administratorrechte nötig). Pi Desk aus Startmenü oder Desktopverknüpfung öffnen.
 2. Anbieter verbinden oder unter Einstellungen einen kompatiblen Modellserver hinzufügen.
 3. Mit **Strg+O** einen Projektordner öffnen, Modell wählen und Nachricht senden.
 
@@ -48,7 +48,7 @@ Die ersten drei Kürzel und das Kürzel für Dateien/Vorschau lassen sich anpass
 
 Pi Desk sucht 10 Sekunden nach dem Start und danach alle 6 Stunden nach einer neuen Version. Gibt es eine, erscheint der Changelog mit **Jetzt aktualisieren**, **Später** und **Diese Version überspringen**. Während ein Agent arbeitet oder eine Anmeldung läuft, wird nur geladen und beim nächsten Beenden installiert. **Einstellungen → Updates** schaltet die automatische Suche ab oder prüft sofort; ebenso **Datei → Nach Updates suchen …**.
 
-**Später** blendet den Hinweis bis zum nächsten Start aus, **Diese Version überspringen** wird gespeichert. Updates sind immer ein vollständiger Setup-Download (keine Differenzupdates) und werden pro Benutzer installiert, ohne Administratorrechte.
+**Später** blendet den Hinweis bis zum nächsten Start aus, **Diese Version überspringen** wird gespeichert. Updates sind immer ein vollständiger Setup-Download (keine Differenzupdates) und werden bei Installation nur für den eigenen Benutzer ohne Administratorrechte eingespielt.
 
 Quelle ist `updates/windows/latest.yml` in diesem Repository (über raw.githubusercontent.com); das Setup selbst ist ein Anhang am GitHub-Release. electron-updater 6.8.9 prüft die SHA-512-Prüfsumme. Ohne Code-Signatur hängt die Echtheit an der Sicherheit des GitHub-Kontos. Protokoll: `%LOCALAPPDATA%\Pi Desk\desktop\logs\updates.log`.
 
@@ -56,7 +56,7 @@ Quelle ist `updates/windows/latest.yml` in diesem Repository (über raw.githubus
 
 Die Funktionen sind weitgehend zugänglich, aber nicht in jedem Detail identisch mit SwiftUI: MLX ist auf Windows nicht verfügbar; der Pi-Begleiter ist vereinfacht; Todos verwenden zusätzlich einen JSON-Editor, Subagenten eine einfache Verlaufsansicht. Es gibt kein eingebettetes interaktives Terminal und keine gerenderte Web-/PDF-Vorschau. Handoff kann bei kurzen oder bereits komprimierten Sitzungen vom Agenten abgelehnt werden. Geschützte Hugging-Face-Modelle mit zusätzlicher Anmeldung sind nicht Teil des Download-Dialogs.
 
-Gemeinsame Logik, echte OMP-18.4.10-Prozesse und die Electron-Oberfläche wurden auf macOS mit isolierten Profilen geprüft. Ein tatsächlicher Windows-Lauf, Windows-OAuth, Bildinferenz und CPU-/GPU-Inferenz müssen auf Windows geprüft werden. Externe Plugin-Installation wurde nicht ausgelöst. Der Update-Ablauf wurde auf macOS mit Unit-Tests und dem Desktop-Smoke geprüft; Setup-Installation und Update-Lauf auf Windows stehen aus. Details: [VERIFICATION.md](VERIFICATION.md). Für deinen Test: [WINDOWS-TESTPLAN.md](WINDOWS-TESTPLAN.md).
+Gemeinsame Logik, echte OMP-18.4.10-Prozesse und die Electron-Oberfläche wurden auf macOS mit isolierten Profilen geprüft. Ein tatsächlicher Windows-Lauf, Windows-OAuth, Bildinferenz und CPU-/GPU-Inferenz müssen auf Windows geprüft werden. Externe Plugin-Installation wurde nicht ausgelöst. Der Update-Ablauf wurde auf macOS geprüft: Unit-Tests simulieren electron-updater, der Desktop-Smoke bedient nur die Oberfläche. Ein echter electron-updater-Lauf (Feed, Download, SHA-512, Installation) sowie Setup-Installation und Update-Lauf auf Windows stehen aus. Details: [VERIFICATION.md](VERIFICATION.md). Für deinen Test: [WINDOWS-TESTPLAN.md](WINDOWS-TESTPLAN.md).
 
 ## Daten und Rechte
 
@@ -90,7 +90,7 @@ PI_DESK_OMP="$PWD/../macos/runtime/omp" npm start
 1. Version in `package.json` erhöhen, Abschnitt in `CHANGELOG.md` schreiben, committen und pushen.
 2. GitHub → Actions → **Windows-Release** → *Run workflow* (oder `gh workflow run windows-release.yml`). Der Workflow lässt sich erst starten, wenn die Workflow-Datei auf dem Standardzweig `main` liegt. Ergebnis: Entwurfs-Release `windows-vX.Y.Z` mit Setup, `latest.yml` und `SHA256SUMS-windows.txt`.
 3. `npm run release:feed` schreibt `updates/windows/latest.yml` lokal. Entwurf herunterladen und testen.
-4. `npm run release:publish` veröffentlicht nach Rückfrage („ja“) das Release und pusht nur den Feed. Ab dann sehen Nutzer das Update.
+4. `npm run release:publish` veröffentlicht nach Rückfrage („ja“) das Release, committet nur den Feed und pusht `main`; das Skript läuft nur auf dem Branch `main`. Ab dann sehen Nutzer das Update.
 
 Zurückrollen: Feed-Commit zurücksetzen. Bereits aktualisierte Installationen bleiben auf der Version.
 

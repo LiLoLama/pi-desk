@@ -3,3 +3,4 @@ runtime/
 dist/
 *.log
 .DS_Store
+verification/update.png

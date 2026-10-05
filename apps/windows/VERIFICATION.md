@@ -8,14 +8,15 @@ Setup (NSIS, pro Benutzer, unsigniert, keine Differenzupdates) und automatische 
 
 ### Auf macOS nachgewiesen
 
-- `npm test`: 54 von 54 Tests bestanden, davon 26 in `test/updates.test.mjs` (Updater-Konfiguration, Prüfzyklus, Überspringen, Später, Download und Installation, Fehlerfälle, Dateispeicher), 7 in `test/release.test.mjs` (Feed-Erzeugung und Prüfung vor dem Veröffentlichen) und 6 in `test/changelog.test.mjs` (Parsen und Filtern der Changelog-Abschnitte). Die Tests wurden plattformneutral geschrieben, liefen bisher aber nur auf macOS.
-- `npm run test:desktop` (mit der Mac-OMP-Runtime): Electron-Smoke bestanden. Er prüft die Update-Schnittstelle `window.piDesktop.updates` (ohne Feed-URL im Renderer), die Einstellungsseite „Updates“, den Update-Dialog (verfügbar, bereit, aktuell), dass der Einstellungsdialog bei einem Statuswechsel nicht wieder aufgeht, dass der Dialog während des Ladens versteckt bleibt und bei „bereit“ erscheint, sowie das Bereinigen von HTML und Links in den Release-Notizen. Der Lauf schreibt `verification/update.png`; die Datei wird nicht eingecheckt.
+- `npm test`: 54 von 54 Tests bestanden, davon 26 in `test/updates.test.mjs` (Updater-Konfiguration, Prüfzyklus, Überspringen, Später, Download und Installation, Fehlerfälle, Dateispeicher), 7 in `test/release.test.mjs` (Feed-Erzeugung und Prüfung vor dem Veröffentlichen) und 6 in `test/changelog.test.mjs` (Parsen und Filtern der Changelog-Abschnitte). Die Unit-Tests simulieren electron-updater; sie wurden plattformneutral geschrieben, liefen bisher aber nur auf macOS.
+- `npm run test:desktop` (mit der Mac-OMP-Runtime): Electron-Smoke bestanden. Er prüft die Update-Schnittstelle `window.piDesktop.updates` (ohne Feed-URL im Renderer), die Einstellungsseite „Updates“, den Update-Dialog (verfügbar, bereit, aktuell), dass der Einstellungsdialog bei einem Statuswechsel nicht wieder aufgeht, dass der Dialog während des Ladens versteckt bleibt und bei „bereit“ erscheint, sowie das Bereinigen von HTML und Links in den Release-Notizen. Der Smoke bedient nur die Oberfläche mit simulierten Statuswerten, nicht den echten Updater. `verification/update.png` wird beim Smoke erzeugt und nicht eingecheckt (in `.gitignore`).
 - Die Release-Skripte sind nur über ihre Unit-Tests abgedeckt. Workflow und `gh`-Aufrufe wurden nicht ausgeführt.
 
 ### Offen
 
 - Lauf des Workflows **Windows-Release** auf `windows-latest`: `npm test` unter Windows, NSIS-Build, Entwurfs-Release mit Setup, `latest.yml` und `SHA256SUMS-windows.txt`. Der Workflow ist erst startbar, wenn die Datei auf `main` liegt. Eine Run-URL oder ein Windows-Testergebnis liegt noch nicht vor.
-- Echte Installation des Setups auf Windows (ohne Administratorrechte, Startmenü, Desktopverknüpfung, Übernahme der Daten aus der ZIP-Version).
+- Echter electron-updater-Lauf (Feed, Download, SHA-512, Installation); bisher nur simuliert beziehungsweise Oberfläche geprüft.
+- Echte Installation des Setups auf Windows (Installationsart „Nur für mich“ ohne Administratorrechte, Startmenü, Desktopverknüpfung, Übernahme der Daten aus der ZIP-Version).
 - Update-Lauf 0.4.0 → 0.4.1 über Feed und Release-Anhang, inklusive SHA-512-Prüfung und Neustart ohne UAC-Abfrage.
 - SmartScreen-Verhalten beim unsignierten Setup und beim automatisch geladenen Update.
 - Busy-Regel auf Windows: Mit laufendem Agenten oder Anmeldung nur laden und beim nächsten Beenden installieren.
@@ -57,4 +58,4 @@ Electron 44.4.5, electron-builder 26.15.3, OMP 18.4.10. Das Paket enthält `Pi D
 - `Pi Desk.exe` und `resources/runtime/omp.exe`: PE32+ x86-64 bestätigt
 - OMP-Runtime im Paket bytegenau gegen die offizielle Prüfsumme geprüft
 
-Kein Setup.exe: `npm run build:installer` bleibt für einen echten Windows-Build vorbereitet. Windows ARM64 wurde nicht gebaut.
+Stand 0.3.0: Kein Setup.exe; der damalige Skriptname `build:installer` existiert nicht mehr, ab 0.4.0 erzeugt `npm run build:win` das Setup. Windows ARM64 wurde nicht gebaut.

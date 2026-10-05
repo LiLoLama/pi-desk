@@ -25,6 +25,7 @@
   },
   "dependencies": {
     "dompurify": "3.4.16",
+    "electron-updater": "6.8.9",
     "marked": "18.0.14",
     "yaml": "2.8.2"
   },

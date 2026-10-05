@@ -6,6 +6,8 @@ process.env.PI_DESK_DESKTOP_DATA=path.join(root,'profile');
 const project=path.join(root,'Projekt mit Umlauten ä');mkdirSync(project);
 writeFileSync(path.join(project,'hallo.txt'),'Windows-Port: Dateivorschau');
 app.setAppPath(path.resolve(__dirname,'..'));
+// Running a test script (not `electron .`) makes Electron report its own version; emulate the packaged app.
+app.getVersion=()=>require('../package.json').version;
 dialog.showOpenDialog=async()=>({canceled:false,filePaths:[project]});
 dialog.showErrorBox=(title,content)=>{console.error(title,content);app.exit(1);};
 const timeout=setTimeout(()=>{console.error('Desktop smoke timed out');app.exit(1);},60000);
@@ -16,6 +18,9 @@ app.on('web-contents-created',(_event,web)=>{
    await run(`new Promise(resolve=>{const timer=setInterval(()=>{if(connected){clearInterval(timer);resolve();}},30)})`);
    assert.equal(await run('typeof window.require'),'undefined');
    assert.equal(await run('typeof window.piDesktop.chooseProject'),'function');
+   assert.equal(await run('typeof window.piDesktop.updates.check'),'function');
+   const update=await run('window.piDesktop.updates.state()');
+   assert.equal(update.phase,'idle');assert.equal(update.current,require('../package.json').version);assert.equal('feedURL' in update,false);
    assert.equal((await fetch(web.getURL()+'api/state')).status,403);
    await run("piFeatures.settingsPage('agent')");
    assert.equal(await run('document.querySelector("#f-instructions")!==null'),true);

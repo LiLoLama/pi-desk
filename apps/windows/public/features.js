@@ -112,10 +112,14 @@
  const closeUpdate=()=>{const d=$('#update-dialog');if(d?.open)d.close();};
  // Closing a result dialog (not ready/downloading) also resets the main-side phase to idle.
  const dismissUpdate=()=>{const x=$('#update-dialog')?.querySelector('.dialog-head [data-feature]');return x?action(x.dataset.feature,'',x):undefined;};
+ let updatePhase='',downloadHidden=false;
+ // Release notes are remote text: relative links must not become project file-link buttons.
+ const updateNotes=text=>{const h=document.createElement('div');h.innerHTML=safeMarkdown(text);h.querySelectorAll('[data-feature="file-link"]').forEach(a=>a.replaceWith(a.textContent));return h.innerHTML;};
  function showUpdate(s){
+  updatePhase=s.phase;
   const head=(title,close='update-later')=>`<div class="dialog-head"><h2>${esc(title)}</h2><button class="icon" data-feature="${close}" aria-label="Schließen">${icon('close')}</button></div>`;
   let html;
-  if(s.phase==='available')html=head(`Pi Desk ${s.version} ist verfügbar`)+`<p class="menu-note">Du hast ${esc(s.current)}.</p><div class="update-notes">${safeMarkdown(s.notes)}</div><div class="form-actions">${button('update-skip','Diese Version überspringen')}<span class="update-spacer"></span>${button('update-later','Später')}<button type="button" class="primary" data-feature="update-download">Jetzt aktualisieren</button></div>`;
+  if(s.phase==='available')html=head(`Pi Desk ${s.version} ist verfügbar`)+`<p class="menu-note">Du hast ${esc(s.current)}.</p><div class="update-notes">${updateNotes(s.notes)}</div><div class="form-actions">${button('update-skip','Diese Version überspringen')}<span class="update-spacer"></span>${button('update-later','Später')}<button type="button" class="primary" data-feature="update-download">Jetzt aktualisieren</button></div>`;
   else if(s.phase==='downloading')html=head('Update wird geladen','update-close-ready')+`<progress max="100" value="${Number(s.percent)||0}"></progress><p class="menu-note">${Number(s.percent)||0} %</p>`;
   else if(s.phase==='ready')html=head(`Pi Desk ${s.version} ist bereit`,'update-close-ready')+`<p>Ein Vorgang läuft noch. Das Update wird beim nächsten Beenden installiert.</p><div class="form-actions">${button('update-close-ready','Beim Beenden installieren')}<button type="button" class="primary" data-feature="update-install">Jetzt neu starten</button></div>`;
   else if(s.phase==='upToDate')html=head('Keine Updates')+`<p>Pi Desk ${esc(s.current)} ist aktuell.</p><div class="form-actions"><span class="update-spacer"></span><button type="button" class="primary" data-feature="update-close">OK</button></div>`;
@@ -131,7 +135,7 @@
   if(name==='update-install')return window.piDesktop.updates.install();
   if(name==='update-skip'){closeUpdate();return window.piDesktop.updates.skip();}
   if(name==='update-later'||name==='update-close'){closeUpdate();return window.piDesktop.updates.later();}
-  if(name==='update-close-ready')return closeUpdate();
+  if(name==='update-close-ready'){if(updatePhase==='downloading')downloadHidden=true;return closeUpdate();}
   if(name==='login')return connect();
   if(name==='connection-new'){savedSettings=await api('settings');return editConnection();}
   if(name==='connection-remove'){if(await yes('Diese Verbindung entfernen? Der gespeicherte Schlüssel wird ebenfalls entfernt.'))await api('settings/connection-remove',{id});return settingsPage();}
@@ -229,7 +233,13 @@
  document.body.insertAdjacentHTML('beforeend',`<button id="pi-pet" class="pi-pet" data-feature="pet" aria-label="Pi-Begleiter: Agentenstatus öffnen" hidden><svg viewBox="0 0 64 64" aria-hidden="true"><path d="M12 28V10l15 10h10l15-10v18q7 28-20 28T12 28"/><path d="M22 34h1m18 0h1M28 43q4 5 8 0M6 37l14 3m24 0 14-3"/></svg></button>`);
  setInterval(()=>{const el=$('.live-status');if(el&&session.busy&&elapsedStart)el.lastChild.textContent=` ${session.pending?.length?'Wartet auf Genehmigung':'OMP arbeitet'} · ${Math.floor((Date.now()-elapsedStart)/1000)} s`;},1000);
  api('desktop-settings').then(s=>{prefs=s;applyAppearance();sync();}).catch(showError);
- window.piDesktop?.updates?.onStatus(s=>{showUpdate(s);if($('.settings-nav [data-id="updates"][aria-current="page"]')&&['upToDate','error','idle'].includes(s.phase))settingsPage('updates').catch(report);});
+ function onUpdateStatus(s){
+  if(s.phase==='downloading'&&downloadHidden)return;
+  if(s.phase!=='downloading')downloadHidden=false;
+  showUpdate(s);
+  if($('#connect-dialog').open&&$('.settings-nav [data-id="updates"][aria-current="page"]')&&['upToDate','error','idle'].includes(s.phase))settingsPage('updates').catch(report);
+ }
+ window.piDesktop?.updates?.onStatus(onUpdateStatus);
  document.addEventListener('change',e=>{if(e.target.matches?.('[data-update-auto]'))window.piDesktop.updates.setAuto(e.target.checked).catch(report);});
- window.piFeatures={settingsPage,showRuntime,sessionTools,sendCurrent,action,safeMarkdown,approvalTool,addImage,showUpdate,getImages:()=>images};
+ window.piFeatures={settingsPage,showRuntime,sessionTools,sendCurrent,action,safeMarkdown,approvalTool,addImage,showUpdate,onUpdateStatus,getImages:()=>images};
 })();

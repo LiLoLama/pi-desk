@@ -5,7 +5,7 @@ const fs=require('node:fs/promises');
 const {randomBytes}=require('node:crypto');
 const {isLocal,externalURL}=require('./security.cjs');
 const {autoUpdater}=require('electron-updater');
-const {createUpdates,fileStore}=require('./updates.cjs');
+const {createUpdates,fileStore,installDecision}=require('./updates.cjs');
 const UPDATE_FEED='https://raw.githubusercontent.com/LiLoLama/pi-desk/main/updates/windows/';
 let window,helper,origin,token,updates,quitting=false,closing=false;
 app.setName('Pi Desk');
@@ -50,9 +50,10 @@ async function openExternal(url){
  const {response}=await dialog.showMessageBox(window,{type:'question',title:'Im Browser öffnen',message:'Diese Adresse im Standardbrowser öffnen?',detail:safe,buttons:['Abbrechen','Öffnen'],defaultId:0,cancelId:0});
  if(response===1)await shell.openExternal(safe);
 }
+// true = work running, false = idle, null = unknown (service slow or unreachable).
 async function engineBusy(){
  try{const state=await fetch(origin+'/api/state',{headers:{'X-Pi-Desk-Native':token},signal:AbortSignal.timeout(2000)}).then(r=>r.json());return Boolean(state.authBusy||state.tasks?.some(t=>t.busy));}
- catch{return false;}
+ catch{return null;}
 }
 async function confirmInterrupt(){
  const {response}=await dialog.showMessageBox(window,{type:'question',title:'Laufende Arbeit beenden?',message:'Der Agent arbeitet noch. Beim Beenden wird der Vorgang abgebrochen.',buttons:['Weiterarbeiten','Beenden'],defaultId:0,cancelId:0});
@@ -60,13 +61,16 @@ async function confirmInterrupt(){
 }
 async function requestClose(){
  if(closing)return;closing=true;
- try{if(await engineBusy()&&!await confirmInterrupt())return;quitting=true;await shutdown();app.quit();}finally{closing=false;}
+ // The user wants to quit: an unknown state (null) does not block quitting, only known running work asks.
+ try{if(await engineBusy()===true&&!await confirmInterrupt())return;quitting=true;await shutdown();app.quit();}finally{closing=false;}
 }
-// Same rule as quitting: never interrupt running work without asking; automatic installs simply wait.
+// Never interrupt running or unknown work without asking; automatic installs simply wait (phase stays ready,
+// autoInstallOnAppQuit installs at the next quit).
 async function installUpdate({confirmBusy}){
  if(closing)return false;closing=true;
  try{
-  if(await engineBusy()&&(!confirmBusy||!await confirmInterrupt()))return false;
+  const decision=installDecision(await engineBusy(),confirmBusy);
+  if(decision==='wait'||(decision==='ask'&&!await confirmInterrupt()))return false;
   quitting=true;await shutdown();autoUpdater.quitAndInstall(true,true);return true;
  }finally{closing=false;}
 }

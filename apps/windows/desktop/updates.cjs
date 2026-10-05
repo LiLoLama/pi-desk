@@ -5,6 +5,12 @@ const {parseChangelog,sectionsNewerThan,renderNotes}=require('./changelog.cjs');
 const FIRST_CHECK=10000,INTERVAL=6*60*60*1000;
 const LOAD_FAILED='Das Update konnte nicht geladen oder bestätigt werden. Es wurde nichts verändert.';
 const CHECK_FAILED='Update-Server nicht erreichbar. Bitte später erneut versuchen.';
+// busy: true (work running), false (idle), null (state unknown, e.g. the local service did not answer).
+// Unknown is never treated as idle: an automatic install waits for quit, a requested one asks first.
+function installDecision(busy,confirmBusy){
+ if(busy===false)return 'install';
+ return confirmBusy?'ask':'wait';
+}
 const fileStore=file=>({
  read(){try{return JSON.parse(fs.readFileSync(file,'utf8'));}catch{return {};}},
  write(data){fs.mkdirSync(path.dirname(file),{recursive:true});fs.writeFileSync(file,JSON.stringify(data,null,1));}
@@ -36,6 +42,7 @@ function createUpdates({updater,store,current,feedURL,send,install,timers=global
  updater.on('error',fail);
  async function check(isManual=false){
   if(status.phase==='checking'){if(isManual&&!manual){manual=true;set({});}return {...status};}
+  if(status.phase==='ready'&&isManual)return set({});
   if(['downloading','ready'].includes(status.phase)||(!isManual&&status.phase==='available'))return {...status};
   manual=isManual;
   if(manual)set({phase:'checking',error:''});else status={...status,phase:'checking',error:''};
@@ -63,4 +70,4 @@ function createUpdates({updater,store,current,feedURL,send,install,timers=global
  function start(){const tick=()=>{if(status.auto)check(false).catch(()=>{});};timers.setTimeout(tick,FIRST_CHECK);timers.setInterval(tick,INTERVAL);}
  return {start,check,download,skip,later,setAuto,installNow,status:()=>({...status})};
 }
-module.exports={createUpdates,fileStore,FIRST_CHECK,INTERVAL};
+module.exports={createUpdates,fileStore,installDecision,FIRST_CHECK,INTERVAL};

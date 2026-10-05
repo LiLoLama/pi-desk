@@ -46,7 +46,7 @@ Die ersten drei Kürzel und das Kürzel für Dateien/Vorschau lassen sich anpass
 
 ## Updates
 
-Pi Desk sucht 10 Sekunden nach dem Start und danach alle 6 Stunden nach einer neuen Version. Gibt es eine, erscheint der Changelog mit **Jetzt aktualisieren**, **Später** und **Diese Version überspringen**. Während ein Agent arbeitet oder eine Anmeldung läuft, wird nur geladen und beim nächsten Beenden installiert. **Einstellungen → Updates** schaltet die automatische Suche ab oder prüft sofort; ebenso **Datei → Nach Updates suchen …**.
+Pi Desk sucht 10 Sekunden nach dem Start und danach alle 6 Stunden nach einer neuen Version. Gibt es eine, erscheint der Changelog mit **Jetzt aktualisieren**, **Später** und **Diese Version überspringen**. Während ein Agent arbeitet, eine Anmeldung läuft oder der Zustand nicht abfragbar ist, wird nur geladen und beim nächsten Beenden installiert; „Jetzt neu starten“ fragt dann nach. Eine erneute Suche zeigt den Hinweis wieder. **Einstellungen → Updates** schaltet die automatische Suche ab oder prüft sofort; ebenso **Datei → Nach Updates suchen …**.
 
 **Später** blendet den Hinweis bis zum nächsten Start aus, **Diese Version überspringen** wird gespeichert. Updates sind immer ein vollständiger Setup-Download (keine Differenzupdates) und werden bei Installation nur für den eigenen Benutzer ohne Administratorrechte eingespielt.
 

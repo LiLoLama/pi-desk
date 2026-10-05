@@ -5,7 +5,7 @@ import {createRequire} from 'node:module';
 import {mkdtempSync,readFileSync,writeFileSync,mkdirSync} from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-const {createUpdates,fileStore,FIRST_CHECK,INTERVAL}=createRequire(import.meta.url)('../desktop/updates.cjs');
+const {createUpdates,fileStore,installDecision,FIRST_CHECK,INTERVAL}=createRequire(import.meta.url)('../desktop/updates.cjs');
 const notes='## 0.5.0 – 20.10.2026\n\n- Neu B\n\n## 0.4.1 – 12.10.2026\n\n- Neu A\n\n## 0.4.0 – 05.10.2026\n\n- Alt';
 function fakeUpdater(){const u=new EventEmitter();u.calls=[];u.setFeedURL=o=>u.calls.push(['feed',o]);u.checkForUpdates=async()=>{u.calls.push(['check']);await u.onCheck?.();};u.downloadUpdate=async()=>{u.calls.push(['download']);await u.onDownload?.();};return u;}
 const memory=(data={})=>({data,read(){return {...this.data};},write(d){this.data={...d};}});
@@ -207,4 +207,24 @@ test('installNow resolves with a status even when install rejects',async()=>{
 test('the file store reads a broken JSON file as empty',()=>{
  const dir=mkdtempSync(path.join(os.tmpdir(),'pi-updates-'));const file=path.join(dir,'updates.json');
  writeFileSync(file,'{"auto":false,');assert.deepEqual(fileStore(file).read(),{});
+});
+test('installDecision never treats an unknown engine state as idle',()=>{
+ assert.equal(installDecision(false,false),'install');
+ assert.equal(installDecision(false,true),'install');
+ assert.equal(installDecision(true,true),'ask');
+ assert.equal(installDecision(null,true),'ask');
+ assert.equal(installDecision(true,false),'wait');
+ assert.equal(installDecision(null,false),'wait');
+});
+test('a manual check while an update is ready shows the ready dialog again',async()=>{
+ const {updates,updater,sent}=setup();offer(updater);await updates.check(false);
+ updater.onDownload=()=>updater.emit('update-downloaded',{version:'0.5.0'});
+ await updates.download();await settle();
+ const before=sent.length;
+ const status=await updates.check(true);
+ assert.equal(status.phase,'ready');assert.equal(status.version,'0.5.0');
+ assert.equal(sent.length,before+1);assert.equal(sent.at(-1).phase,'ready');
+ assert.equal(checks(updater),1);
+ const quiet=sent.length;assert.equal((await updates.check(false)).phase,'ready');
+ assert.equal(sent.length,quiet);assert.equal(checks(updater),1);
 });

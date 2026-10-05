@@ -81,7 +81,7 @@ Die bisherigen automatisierten Prüfungen liefen unter macOS. Diese Liste dient 
 4. Sobald 0.4.1 ausgerollt ist: Pi Desk 0.4.0 starten. Nach ca. 10 s erscheint der Dialog mit dem Changelog von 0.4.1.
 5. „Später“: Dialog schließt. Er erscheint erst nach erneutem App-Start wieder.
 6. „Jetzt aktualisieren“ ohne laufenden Agenten: Fortschritt, Neustart ohne UAC-Abfrage, Einstellungen → Updates zeigt 0.4.1.
-7. Mit laufendem Agenten (oder offener Anmeldung) aktualisieren: Hinweis „Das Update wird beim nächsten Beenden installiert“. „Jetzt neu starten“ fragt wie beim Beenden nach.
+7. Mit laufendem Agenten (oder offener Anmeldung) aktualisieren: Hinweis „Das Update ist geladen und wird beim nächsten Beenden installiert.“ „Jetzt neu starten“ fragt wie beim Beenden nach. „Beim Beenden installieren“ schließt den Hinweis; „Datei → Nach Updates suchen …“ zeigt ihn wieder.
 8. „Diese Version überspringen“: Kein automatischer Dialog mehr für diese Version, manuelle Suche zeigt sie weiterhin.
 9. Netzwerk trennen, „Jetzt nach Updates suchen“: verständliche Meldung, App bleibt benutzbar.
 10. `%LOCALAPPDATA%\Pi Desk\desktop\logs\updates.log` enthält die Prüfungen.

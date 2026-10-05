@@ -10,9 +10,9 @@ const notes='## 0.5.0 – 20.10.2026\n\n- Neu B\n\n## 0.4.1 – 12.10.2026\n\n- 
 function fakeUpdater(){const u=new EventEmitter();u.calls=[];u.setFeedURL=o=>u.calls.push(['feed',o]);u.checkForUpdates=async()=>{u.calls.push(['check']);await u.onCheck?.();};u.downloadUpdate=async()=>{u.calls.push(['download']);await u.onDownload?.();};return u;}
 const memory=(data={})=>({data,read(){return {...this.data};},write(d){this.data={...d};}});
 function fakeTimers(){const t={timeouts:[],intervals:[]};t.setTimeout=(f,ms)=>t.timeouts.push([f,ms]);t.setInterval=(f,ms)=>t.intervals.push([f,ms]);return t;}
-function setup(store=memory(),installFn){
+function setup(store=memory(),installFn,sendFn){
  const updater=fakeUpdater(),sent=[],timers=fakeTimers(),installs=[];
- const updates=createUpdates({updater,store,current:'0.4.0',feedURL:'https://example.test/feed/',send:s=>sent.push(s),install:installFn||(async options=>{installs.push(options);return true;}),timers,now:()=>new Date('2026-10-05T10:00:00Z')});
+ const updates=createUpdates({updater,store,current:'0.4.0',feedURL:'https://example.test/feed/',send:s=>{sent.push(s);sendFn?.(s);},install:installFn||(async options=>{installs.push(options);return true;}),timers,now:()=>new Date('2026-10-05T10:00:00Z')});
  return {updates,updater,sent,timers,store,installs};
 }
 const offer=updater=>{updater.onCheck=()=>updater.emit('update-available',{version:'0.5.0',releaseNotes:notes});};
@@ -129,24 +129,36 @@ test('background checks never announce checking; manual checks do',async()=>{
  assert.ok(sent.some(s=>s.phase==='checking'));
 });
 test('a manual check during a running background check shows its result',async()=>{
- const {updates,updater}=setup();let second;
+ const {updates,updater,sent}=setup();let second;
  updater.onCheck=async()=>{second=await updates.check(true);updater.emit('update-not-available',{version:'0.4.0'});};
  const first=await updates.check(false);
  assert.equal(second.phase,'checking');assert.equal(checks(updater),1);
  assert.equal(first.phase,'upToDate');
+ assert.equal(sent.filter(s=>s.phase==='checking').length,1);
 });
-test('closing an upToDate or error result frees background checks again',async()=>{
+test('a standing upToDate or error result never blocks background checks',async()=>{
  const {updates,updater}=setup();
  updater.onCheck=()=>updater.emit('update-not-available',{version:'0.4.0'});
  assert.equal((await updates.check(true)).phase,'upToDate');
- assert.equal((await updates.check(false)).phase,'upToDate');assert.equal(checks(updater),1);
- assert.equal(updates.later().phase,'idle');
  assert.equal((await updates.check(false)).phase,'idle');assert.equal(checks(updater),2);
  offline(updater);
  assert.equal((await updates.check(true)).phase,'error');
- assert.equal((await updates.check(false)).phase,'error');assert.equal(checks(updater),3);
- assert.equal(updates.later().phase,'idle');
  assert.equal((await updates.check(false)).phase,'idle');assert.equal(checks(updater),4);
+});
+test('later closes an upToDate or error result',async()=>{
+ const {updates,updater}=setup();
+ updater.onCheck=()=>updater.emit('update-not-available',{version:'0.4.0'});
+ await updates.check(true);assert.equal(updates.later().phase,'idle');
+ offline(updater);await updates.check(true);assert.equal(updates.later().phase,'idle');
+});
+test('a throwing send cannot leave a check hanging',async()=>{
+ let broken=true;
+ const {updates,updater}=setup(memory(),undefined,()=>{if(broken)throw Error('window gone');});
+ updater.onCheck=()=>updater.emit('update-not-available',{version:'0.4.0'});
+ assert.equal((await updates.check(true)).phase,'upToDate');
+ assert.equal((await updates.check(false)).phase,'idle');
+ broken=false;assert.equal((await updates.check(true)).phase,'upToDate');
+ assert.equal(checks(updater),3);
 });
 test('later does not touch phases that are not dismissible',async()=>{
  const {updates,updater}=setup();offer(updater);await updates.check(false);

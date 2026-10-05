@@ -13,7 +13,7 @@ function createUpdates({updater,store,current,feedURL,send,install,timers=global
  const saved={skipped:'',...store.read()};
  let status={phase:'idle',current,version:'',notes:'',percent:0,error:'',auto:saved.auto!==false,lastCheck:saved.lastCheck||''},manual=false,dismissed='',requested=false;
  const persist=()=>{try{store.write({auto:status.auto,skipped:saved.skipped,lastCheck:status.lastCheck});}catch{}};
- const set=patch=>{status={...status,...patch};send({...status});return {...status};};
+ const set=patch=>{status={...status,...patch};try{send({...status});}catch{}return {...status};};
  const fail=()=>{
   if(status.phase==='error')return {...status};
   const loading=['downloading','ready'].includes(status.phase);requested=false;
@@ -36,7 +36,7 @@ function createUpdates({updater,store,current,feedURL,send,install,timers=global
  updater.on('error',fail);
  async function check(isManual=false){
   if(status.phase==='checking'){if(isManual&&!manual){manual=true;set({});}return {...status};}
-  if(['downloading','ready'].includes(status.phase)||(!isManual&&status.phase!=='idle'))return {...status};
+  if(['downloading','ready'].includes(status.phase)||(!isManual&&status.phase==='available'))return {...status};
   manual=isManual;
   if(manual)set({phase:'checking',error:''});else status={...status,phase:'checking',error:''};
   status.lastCheck=now().toISOString();persist();

@@ -10,7 +10,7 @@
     "start": "electron .",
     "dev:server": "node server.mjs",
     "runtime:win": "node scripts/install-runtime.mjs",
-    "test": "node --test test/core.test.mjs test/settings.test.mjs test/capabilities.test.mjs test/local-models.test.mjs test/windows.test.mjs test/parity.test.mjs test/rpc-contract.test.mjs test/changelog.test.mjs test/updates.test.mjs",
+    "test": "node --test test/core.test.mjs test/settings.test.mjs test/capabilities.test.mjs test/local-models.test.mjs test/windows.test.mjs test/parity.test.mjs test/rpc-contract.test.mjs test/changelog.test.mjs test/updates.test.mjs test/release.test.mjs",
     "test:host": "node test/native-host.mjs",
     "build:win": "npm run runtime:win && electron-builder --win nsis --x64 --publish never",
     "test:desktop": "electron test/desktop-smoke.cjs",

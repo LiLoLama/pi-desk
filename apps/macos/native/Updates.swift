@@ -45,6 +45,7 @@ import SwiftUI
   private var userInitiated = false
   private var installWhenFound = false
   private var locationHintShown = false
+  private var pendingRecheck = false
 
   func start() {
     let driver = UpdateDriver(model: self)
@@ -75,8 +76,10 @@ import SwiftUI
       showWindow()
       return
     }
+    if pendingRecheck { return }
     if acknowledgement != nil {
       // A result is still on screen; Sparkle starts a fresh check only after it is acknowledged.
+      pendingRecheck = true
       acknowledge()
       checkWhenIdle(attempts: 20)
       return
@@ -102,6 +105,7 @@ import SwiftUI
     finish()
   }
   func close() {
+    pendingRecheck = false
     answer(.dismiss)
     acknowledge()
     if case .installing = phase {} else { endSession() }
@@ -138,10 +142,12 @@ import SwiftUI
   }
   private func checkWhenIdle(attempts: Int) {
     DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
-      guard let self else { return }
+      // Closing the dialog meanwhile cancels the re-check.
+      guard let self, self.pendingRecheck else { return }
       if attempts > 0, self.updater?.sessionInProgress == true {
         self.checkWhenIdle(attempts: attempts - 1)
       } else {
+        self.pendingRecheck = false
         self.checkNow()
       }
     }
@@ -269,7 +275,6 @@ import SwiftUI
       phase = .ready(version: offeredVersion)
       showWindow()
     } else {
-      confirmedRestart = true
       phase = .installing
       reply(.install)
     }
@@ -280,18 +285,13 @@ import SwiftUI
     acknowledgement = nil
     cancelDownload = nil
     userInitiated = false
+    // Sparkle also ends aborted installs this way, so a given restart confirmation must not outlive it.
+    endSession()
     switch phase {
-    case .ready:
-      return
-    case .installing:
-      // The restart is under way; keep the confirmation for the quit that follows.
-      phase = .idle
-      window?.orderOut(nil)
-    case .upToDate, .failed, .moveToApplications:
+    case .ready, .upToDate, .failed, .moveToApplications:
       // Stays on screen until the user closes it.
-      endSession()
+      return
     default:
-      endSession()
       phase = .idle
       window?.orderOut(nil)
     }

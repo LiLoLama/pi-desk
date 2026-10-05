@@ -32,7 +32,7 @@ function providerConfig(c) {
   const base=c.baseUrl.replace(/\/v1\/?$/,'');
   return {baseUrl:c.kind==='ollama'?base:c.baseUrl,api:c.kind==='ollama'?'openai-responses':'openai-completions',
     ...(c.apiKey?{apiKey:c.apiKey}:{auth:'none'}),
-    ...(c.models.length?{models:c.models.map(id=>({id,name:c.managed?c.name:id,reasoning:false,input:['text'],contextWindow:c.managed?8192:32768,maxTokens:c.managed?2048:4096}))}:
+    ...(c.models.length?{models:c.models.map(id=>({id,name:c.managed?c.name:id,reasoning:false,input:['text'],contextWindow:c.managed?c.contextWindow:32768,maxTokens:c.managed?2048:4096}))}:
       {discovery:{type:c.kind==='openai'?'openai-models-list':c.kind}})};
 }
 export class SettingsStore {
@@ -73,7 +73,7 @@ export class SettingsStore {
     if(old)next.connections[next.connections.indexOf(old)]=c;else next.connections.push(c);
     await this.commit(next);return this.public();
   }
-  async managedLocal(connection){const next=structuredClone(this.state);next.connections=next.connections.filter(c=>c.id!=='pi-desk-local');if(connection)next.connections.push({...validateConnection(connection),id:'pi-desk-local',managed:true});await this.commit(next);}
+  async managedLocal(connection){const next=structuredClone(this.state);next.connections=next.connections.filter(c=>c.id!=='pi-desk-local');if(connection)next.connections.push({...validateConnection(connection),contextWindow:Number.isInteger(connection.contextWindow)&&connection.contextWindow>=4096&&connection.contextWindow<=262144?connection.contextWindow:32768,id:'pi-desk-local',managed:true});await this.commit(next);}
   async removeConnection(id){if(!this.state.connections.some(c=>c.id===id))throw Error('Verbindung nicht gefunden.');const next=structuredClone(this.state);next.connections=next.connections.filter(c=>c.id!==id);await this.commit(next);return this.public();}
   async saveAgent(raw){
     if(typeof raw.instructions!=='string'||raw.instructions.length>20000)throw Error('Persönliche Hinweise: maximal 20.000 Zeichen.');

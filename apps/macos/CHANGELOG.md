@@ -5,6 +5,7 @@
 - Pi Desk sucht jetzt selbst nach Updates und zeigt vor dem Aktualisieren, was neu ist.
 - Neue Einstellungsseite „Updates“: automatische Suche ein- oder ausschalten und jederzeit manuell prüfen.
 - Die App ist mit Developer ID signiert und von Apple notariell beglaubigt. Die Gatekeeper-Warnung beim ersten Start entfällt.
+- Die Kontextlänge lokaler Modelle ist jetzt je Modell wählbar (Standard 32k) und zeigt den geschätzten Speicherbedarf. Behebt Fehler bei lokalen GGUF-Modellen, deren Kontext bisher fest auf 8k stand.
 - Wichtig: Diese Version einmalig von Hand installieren. Danach kommen Updates automatisch.
 
 ## 0.2.0 – 02.10.2026

@@ -2,3 +2,4 @@
 
 .settings-nav{align-self:start}.settings-page .feature-form:first-child{margin-top:0}.feature-content input[type=checkbox]{accent-color:var(--green)}
 .update-dialog{width:min(560px,calc(100vw - 32px))}.update-notes{max-height:320px;overflow:auto;padding:10px 14px;border:1px solid var(--line);border-radius:8px;margin:10px 0}.update-notes h2{font-size:15px;margin:12px 0 4px}.update-notes h2:first-child{margin-top:0}.update-dialog .form-actions{align-items:center}.update-spacer{flex:1}.update-dialog progress{width:100%;accent-color:var(--green)}
+.row-actions select{max-width:100%;padding:6px 8px;font-size:12px;background:#222627;color:var(--fg);border:1px solid #ffffff24;border-radius:6px}.row-actions select option:disabled{color:var(--muted)}

@@ -62,6 +62,7 @@ Bitte mit einem kleinen Testprojekt beginnen. Bei einem Fehler notieren: Windows
 - [ ] Modellordner hinzufügen, GGUF scannen, Ordner entfernen.
 - [ ] Öffentliches GGUF-Modell suchen, Datei/Größe wählen und herunterladen; Fortschritt, Abbruch und Fehlerdarstellung prüfen.
 - [ ] CPU-Backend wählen, kleines Modell laden: Engine-Download/Entpacken und tatsächliche Antwort prüfen.
+- [ ] Kontextlänge je Modell: Modellzeile zeigt „trainiert bis …“ und Stufen mit Speicherbedarf (Standard 32k); zu große Stufen sind gesperrt. Mit 32k eine Agentenaufgabe senden: kein Fehler 400. Bei geladenem Modell ist die Auswahl gesperrt.
 - [ ] Modell entladen, Vulkan wählen und auf geeignetem GPU-System erneut laden/antworten; bei Treiberproblemen CPU erneut testen.
 - [ ] Nach App-Neustart Modell erneut laden; Server beim Schließen beenden.
 - [ ] Ollama/LM Studio als unabhängigen Weg testen. MLX wird unter Windows nicht angeboten.

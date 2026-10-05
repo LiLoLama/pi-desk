@@ -9,6 +9,7 @@ Pi Desk für Windows – Version 0.4.0 (x64)
 
 Updates: Pi Desk sucht selbst nach neuen Versionen und zeigt vor der
 Installation, was neu ist. Einstellungen → Updates.
+Lokale Modelle: Kontextlänge je Modell wählbar (Standard 32k, seit 0.3.1).
 
 Node und Oh My Pi sind enthalten. Git ist für Git-Funktionen zusätzlich nötig.
 Enter: senden/einreihen. Shift+Enter: Absatz. Alt+Enter: sofortige Steuerung.

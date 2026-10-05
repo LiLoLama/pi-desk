@@ -17,6 +17,8 @@ import SwiftUI
 
   @Published private(set) var phase: Phase = .idle
   @Published private(set) var lastCheck: Date?
+  /// Set when Sparkle could not start; checks then show this instead of doing nothing.
+  @Published private(set) var unavailable: String?
   @Published var automaticChecks = true {
     didSet {
       if let updater, updater.automaticallyChecksForUpdates != automaticChecks {
@@ -36,6 +38,7 @@ import SwiftUI
   private var offeredVersion = ""
   private var dismissedVersion = ""
   private var reply: ((SPUUserUpdateChoice) -> Void)?
+  private var acknowledgement: (() -> Void)?
   private var cancelDownload: (() -> Void)?
   private var expectedBytes: UInt64 = 0
   private var receivedBytes: UInt64 = 0
@@ -47,7 +50,9 @@ import SwiftUI
     let driver = UpdateDriver(model: self)
     let updater = SPUUpdater(hostBundle: .main, applicationBundle: .main, userDriver: driver, delegate: self)
     do { try updater.start() } catch {
-      phase = .failed("Updates sind nicht verfügbar: \(error.localizedDescription)")
+      let message = "Updates sind nicht verfügbar: \(error.localizedDescription)"
+      unavailable = message
+      phase = .failed(message)
       return
     }
     self.driver = driver
@@ -64,33 +69,56 @@ import SwiftUI
   // MARK: User actions
 
   func checkNow() {
-    guard let updater else { return }
-    userInitiated = true
-    if updater.canCheckForUpdates { updater.checkForUpdates() } else { showWindow() }
+    guard let updater else {
+      userInitiated = true
+      phase = .failed(unavailable ?? "Updates sind nicht verfügbar.")
+      showWindow()
+      return
+    }
+    if acknowledgement != nil {
+      // A result is still on screen; Sparkle starts a fresh check only after it is acknowledged.
+      acknowledge()
+      checkWhenIdle(attempts: 20)
+      return
+    }
+    if updater.canCheckForUpdates {
+      userInitiated = true
+      updater.checkForUpdates()
+    } else if phase != .idle {
+      userInitiated = true
+      showWindow()
+    }
   }
   func install() { answer(.install) }
   func later() {
     if case .available(let version, _) = phase { dismissedVersion = version }
     answer(.dismiss)
+    endSession()
     finish()
   }
   func skip() {
     answer(.skip)
+    endSession()
     finish()
   }
   func close() {
     answer(.dismiss)
+    acknowledge()
+    if case .installing = phase {} else { endSession() }
     finish()
   }
   func cancelDownloading() {
     cancelDownload?()
     cancelDownload = nil
+    endSession()
     finish()
   }
   func restartNow() {
     if Desk.shared.updateBlocked && !Desk.confirmQuitWhileBusy() { return }
     confirmedRestart = true
+    userInitiated = true
     if reply != nil {
+      phase = .installing
       answer(.install)
     } else {
       installWhenFound = true
@@ -102,6 +130,26 @@ import SwiftUI
     let pending = reply
     reply = nil
     pending?(choice)
+  }
+  private func acknowledge() {
+    let pending = acknowledgement
+    acknowledgement = nil
+    pending?()
+  }
+  private func checkWhenIdle(attempts: Int) {
+    DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
+      guard let self else { return }
+      if attempts > 0, self.updater?.sessionInProgress == true {
+        self.checkWhenIdle(attempts: attempts - 1)
+      } else {
+        self.checkNow()
+      }
+    }
+  }
+  /// A session ended without installing: the next quit asks again and nothing installs on its own.
+  private func endSession() {
+    confirmedRestart = false
+    installWhenFound = false
   }
   private func finish() {
     userInitiated = false
@@ -120,12 +168,13 @@ import SwiftUI
     let bundle = Bundle.main.bundleURL
     let writable = FileManager.default.isWritableFile(atPath: bundle.deletingLastPathComponent().path)
     guard UpdateLogic.canReplace(bundlePath: bundle.path, parentWritable: writable) else {
-      reply(.dismiss)
+      // Set the phase first: the dismiss reply ends the session and dismissed() keeps this phase.
       if userInitiated || !locationHintShown {
         locationHintShown = true
         phase = .moveToApplications
         showWindow()
       }
+      reply(.dismiss)
       return
     }
     offeredVersion = item.displayVersionString
@@ -140,7 +189,16 @@ import SwiftUI
       phase = .ready(version: offeredVersion)
       showWindow()
     case .installing:
-      reply(.install)
+      // Already waiting for the next quit; restart only after the user asked for it.
+      if installWhenFound || confirmedRestart {
+        installWhenFound = false
+        phase = .installing
+        reply(.install)
+        return
+      }
+      self.reply = reply
+      phase = .ready(version: offeredVersion)
+      if userInitiated { showWindow() }
     default:
       if !userInitiated && offeredVersion == dismissedVersion {
         reply(.dismiss)
@@ -153,27 +211,32 @@ import SwiftUI
       showWindow()
     }
   }
-  func notFound() {
+  func notFound(_ acknowledgement: @escaping () -> Void) {
     lastCheck = Date()
+    endSession()
     if userInitiated {
+      self.acknowledgement = acknowledgement
       phase = .upToDate
       showWindow()
     } else {
       phase = .idle
+      acknowledgement()
     }
   }
-  func failed(_ error: Error) {
+  func failed(_ error: Error, _ acknowledgement: @escaping () -> Void) {
     let loading: Bool
     switch phase {
     case .downloading, .extracting, .installing: loading = true
     default: loading = false
     }
     cancelDownload = nil
-    confirmedRestart = false
+    endSession()
     guard userInitiated || loading else {
       phase = .idle
+      acknowledgement()
       return
     }
+    self.acknowledgement = acknowledgement
     phase = .failed(
       loading
         ? "Das Update konnte nicht geladen oder bestätigt werden. Es wurde nichts verändert."
@@ -201,23 +264,37 @@ import SwiftUI
     phase = .extracting(progress: progress)
   }
   func readyToInstall(_ reply: @escaping (SPUUserUpdateChoice) -> Void) {
-    if Desk.shared.updateBlocked {
+    if Desk.shared.updateBlocked && !confirmedRestart {
       self.reply = reply
       phase = .ready(version: offeredVersion)
       showWindow()
     } else {
       confirmedRestart = true
+      phase = .installing
       reply(.install)
     }
   }
   func installing() { phase = .installing }
   func dismissed() {
     reply = nil
+    acknowledgement = nil
     cancelDownload = nil
     userInitiated = false
-    if case .ready = phase { return }
-    phase = .idle
-    window?.orderOut(nil)
+    switch phase {
+    case .ready:
+      return
+    case .installing:
+      // The restart is under way; keep the confirmation for the quit that follows.
+      phase = .idle
+      window?.orderOut(nil)
+    case .upToDate, .failed, .moveToApplications:
+      // Stays on screen until the user closes it.
+      endSession()
+    default:
+      endSession()
+      phase = .idle
+      window?.orderOut(nil)
+    }
   }
 
   // MARK: Window
@@ -233,12 +310,17 @@ import SwiftUI
       window.center()
       self.window = window
     }
-    window?.makeKeyAndOrderFront(nil)
-    NSApp.activate(ignoringOtherApps: true)
+    if userInitiated {
+      window?.makeKeyAndOrderFront(nil)
+      NSApp.activate(ignoringOtherApps: true)
+    } else {
+      // Background offers appear without taking focus from the user's current work.
+      window?.orderFront(nil)
+    }
   }
   nonisolated func windowWillClose(_ notification: Notification) {
     MainActor.assumeIsolated {
-      if reply != nil { later() } else { finish() }
+      if reply != nil { later() } else { close() }
     }
   }
 
@@ -270,12 +352,10 @@ final class UpdateDriver: NSObject, SPUUserDriver {
   func showUpdateReleaseNotes(with downloadData: SPUDownloadData) {}
   func showUpdateReleaseNotesFailedToDownloadWithError(_ error: Error) {}
   func showUpdateNotFoundWithError(_ error: Error, acknowledgement: @escaping () -> Void) {
-    main { $0.notFound() }
-    acknowledgement()
+    main { $0.notFound(acknowledgement) }
   }
   func showUpdaterError(_ error: Error, acknowledgement: @escaping () -> Void) {
-    main { $0.failed(error) }
-    acknowledgement()
+    main { $0.failed(error, acknowledgement) }
   }
   func showDownloadInitiated(cancellation: @escaping () -> Void) { main { $0.downloadStarted(cancel: cancellation) } }
   func showDownloadDidReceiveExpectedContentLength(_ expectedContentLength: UInt64) {
@@ -338,8 +418,7 @@ struct UpdateView: View {
         ProgressView(value: progress)
       case .ready(let version):
         Text("Pi Desk \(version) ist bereit").font(.system(size: 18, weight: .semibold))
-        Text("Ein Vorgang läuft noch. Das Update wird beim nächsten Beenden installiert.")
-          .foregroundStyle(.secondary)
+        ReadyNote(desk: Desk.shared)
         actions {
           Button("Beim Beenden installieren") { updates.later() }
           Button("Jetzt neu starten") { updates.restartNow() }.keyboardShortcut(.defaultAction)
@@ -373,6 +452,19 @@ struct UpdateView: View {
   }
 }
 
+/// Observes Desk on its own so streaming chat output does not re-render the whole dialog.
+private struct ReadyNote: View {
+  @ObservedObject var desk: Desk
+
+  var body: some View {
+    Text(
+      desk.updateBlocked
+        ? "Ein Vorgang läuft noch. Das Update wird beim nächsten Beenden installiert."
+        : "Das Update ist geladen und wird beim nächsten Beenden installiert."
+    ).foregroundStyle(.secondary)
+  }
+}
+
 struct UpdateSettingsView: View {
   @ObservedObject var updates: AppUpdates
 
@@ -393,8 +485,16 @@ struct UpdateSettingsView: View {
           systemImage: "exclamationmark.circle"
         ).foregroundStyle(.orange)
       }
+      if let failure {
+        Label(failure, systemImage: "exclamationmark.circle").foregroundStyle(.orange)
+      }
       Text("Pi Desk sucht beim Start und danach alle 6 Stunden. Vor jeder Installation siehst du, was neu ist.")
         .font(.caption).foregroundStyle(.secondary)
     }
+  }
+
+  private var failure: String? {
+    if case .failed(let message) = updates.phase { return message }
+    return updates.unavailable
   }
 }

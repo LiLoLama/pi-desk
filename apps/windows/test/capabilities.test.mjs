@@ -21,7 +21,7 @@ test('MCP secrets stay private, changed targets require explicit secrets, other 
  assert.equal((await c.mcpDocument()).mcpServers.fixture.headers.Authorization,'fixture-secret');
  await assert.rejects(c.saveServer({name:'fixture',edit:true,config:{type:'http',url:'http://localhost:456/mcp'}}),/Ziel geändert/);
  await c.setServer('fixture',false);assert.ok((await c.mcpDocument()).disabledServers.includes('fixture'));
- await c.setServer('fixture',false,true);const doc=await c.mcpDocument();assert.ok(doc.mcpServers.external);assert.equal(doc.extra,'keep');assert.equal((await stat(c.mcpFile)).mode&0o777,0o600);
+ await c.setServer('fixture',false,true);const doc=await c.mcpDocument();assert.ok(doc.mcpServers.external);assert.equal(doc.extra,'keep');if(process.platform!=='win32')assert.equal((await stat(c.mcpFile)).mode&0o777,0o600);
  assert.throws(()=>mcpConfig({type:'stdio',command:'node',args:'invalid'}),/Argumente/);
  }finally{await rm(root,{recursive:true,force:true});}
 });

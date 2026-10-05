@@ -3,9 +3,13 @@ on:
   workflow_dispatch:
 permissions:
   contents: write
+concurrency:
+  group: windows-release
+  cancel-in-progress: false
 jobs:
   build:
     runs-on: windows-latest
+    timeout-minutes: 45
     defaults:
       run:
         working-directory: apps/windows
@@ -26,8 +30,8 @@ jobs:
           $setup = "Pi-Desk-$version-Windows-x64-Setup.exe"
           if (-not (Test-Path "dist/$setup") -or -not (Test-Path "dist/latest.yml")) { throw "Setup oder latest.yml fehlt" }
           $hash = (Get-FileHash "dist/$setup" -Algorithm SHA256).Hash.ToLower()
-          "$hash  $setup" | Out-File -Encoding ascii dist/SHA256SUMS-windows.txt
-          node scripts/release-notes.mjs | Out-File -Encoding utf8 dist/release-notes.md
+          [IO.File]::WriteAllText((Join-Path $PWD 'dist/SHA256SUMS-windows.txt'), "$hash  $setup`n")
+          node scripts/release-notes.mjs dist/release-notes.md
       - name: Entwurfs-Release anlegen
         env:
           GH_TOKEN: ${{ github.token }}

@@ -1,5 +1,5 @@
 // Release text for GitHub, built from the CHANGELOG.md section of the current version.
-import {readFile} from 'node:fs/promises';
+import {readFile,writeFile} from 'node:fs/promises';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {createRequire} from 'node:module';
@@ -11,5 +11,7 @@ Windows x64. Setup ohne Administratorrechte. Nicht signiert: SmartScreen kann be
 if(process.argv[1]===fileURLToPath(import.meta.url)){
  const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
  const {version}=JSON.parse(await readFile(path.join(root,'package.json'),'utf8'));
- process.stdout.write(releaseNotes(await readFile(path.join(root,'CHANGELOG.md'),'utf8'),version)+'\n');
+ const notes=releaseNotes(await readFile(path.join(root,'CHANGELOG.md'),'utf8'),version)+'\n';
+ // Optional output path: node writes UTF-8 without BOM itself, no shell re-encoding
+ if(process.argv[2])await writeFile(process.argv[2],notes,'utf8');else process.stdout.write(notes);
 }

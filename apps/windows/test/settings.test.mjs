@@ -13,7 +13,7 @@ test('settings preserve existing models, redact secrets, validate changes and re
  const c=result.connections[0];assert.equal(c.hasApiKey,true);assert.equal(c.apiKey,undefined);
  assert.ok(!JSON.stringify(result).includes('fixture-secret'));
  const yaml=await readFile(store.models,'utf8');assert.match(yaml,/# Keep my provider/);assert.equal(parse(yaml).providers.external.apiKey,'EXISTING_KEY');
- assert.equal((await stat(store.file)).mode&0o777,0o600);
+ if(process.platform!=='win32')assert.equal((await stat(store.file)).mode&0o777,0o600);
  await assert.rejects(store.saveConnection({...c,baseUrl:'http://127.0.0.1:4322/v1'}),/Schlüssel/);
  await store.saveConnection({...c,name:'Renamed'});assert.equal(store.state.connections[0].apiKey,'fixture-secret');
  await store.saveAgent({instructions:'Antworte knapp.',thinking:'high'});

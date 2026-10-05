@@ -1,7 +1,7 @@
 import test from 'node:test';import assert from 'node:assert/strict';import {mkdtemp,mkdir,writeFile,readFile,rm,symlink,realpath} from 'node:fs/promises';import os from 'node:os';import path from 'node:path';import {LocalModels,scanFolders,suitability} from '../local-models.mjs';
 test('library scans deduplicated roots, MLX, GGUF shards and preserves files',async()=>{
  const root=await realpath(await mkdtemp(path.join(os.tmpdir(),'pi-library-unit-')));try{
- const models=root+'/models';await mkdir(models);await writeFile(models+'/tiny.gguf','GGUF');await writeFile(models+'/mmproj.gguf','projection');
+ const models=path.join(root,'models');await mkdir(models);await writeFile(models+'/tiny.gguf','GGUF');await writeFile(models+'/mmproj.gguf','projection');
  await mkdir(models+'/mlx');for(const [name,body] of Object.entries({'config.json':'{"model_type":"qwen"}','tokenizer.json':'{}','model.safetensors':'weights'}))await writeFile(models+'/mlx/'+name,body);
  await symlink(models,models+'/cycle',process.platform==='win32'?'junction':'dir');const scan=await scanFolders([models,models+'/mlx']);assert.equal(scan.models.length,2);assert.deepEqual(scan.errors,[]);
  const snapshot=models+'/models--owner--model/snapshots/'+'a'.repeat(40);await mkdir(snapshot,{recursive:true});for(const [name,body] of Object.entries({'config.json':'{}','tokenizer.json':'{}','model.safetensors':'weights'}))await writeFile(snapshot+'/'+name,body);

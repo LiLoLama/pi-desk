@@ -1,4 +1,26 @@
-# Windows-Port 0.3.0 – Prüfstand 02.10.2026
+# Windows-Port 0.4.0 – Prüfstand 05.10.2026
+
+Die Abschnitte zu OMP 18.4.10 und zur Paketierung stammen vom Stand 0.3.0 (02.10.2026) und wurden für 0.4.0 nicht neu erhoben.
+
+## 0.4.0 – Updates
+
+Setup (NSIS, pro Benutzer, unsigniert, keine Differenzupdates) und automatische Updates über electron-updater 6.8.9 mit generischem Feed `updates/windows/latest.yml`. Alle folgenden Läufe fanden auf macOS statt.
+
+### Auf macOS nachgewiesen
+
+- `npm test`: 54 von 54 Tests bestanden, davon 26 in `test/updates.test.mjs` (Updater-Konfiguration, Prüfzyklus, Überspringen, Später, Download und Installation, Fehlerfälle, Dateispeicher), 7 in `test/release.test.mjs` (Feed-Erzeugung und Prüfung vor dem Veröffentlichen) und 6 in `test/changelog.test.mjs` (Parsen und Filtern der Changelog-Abschnitte). Die Tests wurden plattformneutral geschrieben, liefen bisher aber nur auf macOS.
+- `npm run test:desktop` (mit der Mac-OMP-Runtime): Electron-Smoke bestanden. Er prüft die Update-Schnittstelle `window.piDesktop.updates` (ohne Feed-URL im Renderer), die Einstellungsseite „Updates“, den Update-Dialog (verfügbar, bereit, aktuell), dass der Einstellungsdialog bei einem Statuswechsel nicht wieder aufgeht, dass der Dialog während des Ladens versteckt bleibt und bei „bereit“ erscheint, sowie das Bereinigen von HTML und Links in den Release-Notizen. Der Lauf schreibt `verification/update.png`; die Datei wird nicht eingecheckt.
+- Die Release-Skripte sind nur über ihre Unit-Tests abgedeckt. Workflow und `gh`-Aufrufe wurden nicht ausgeführt.
+
+### Offen
+
+- Lauf des Workflows **Windows-Release** auf `windows-latest`: `npm test` unter Windows, NSIS-Build, Entwurfs-Release mit Setup, `latest.yml` und `SHA256SUMS-windows.txt`. Der Workflow ist erst startbar, wenn die Datei auf `main` liegt. Eine Run-URL oder ein Windows-Testergebnis liegt noch nicht vor.
+- Echte Installation des Setups auf Windows (ohne Administratorrechte, Startmenü, Desktopverknüpfung, Übernahme der Daten aus der ZIP-Version).
+- Update-Lauf 0.4.0 → 0.4.1 über Feed und Release-Anhang, inklusive SHA-512-Prüfung und Neustart ohne UAC-Abfrage.
+- SmartScreen-Verhalten beim unsignierten Setup und beim automatisch geladenen Update.
+- Busy-Regel auf Windows: Mit laufendem Agenten oder Anmeldung nur laden und beim nächsten Beenden installieren.
+- Dass `gh` den Entwurf über den Tag `windows-vX.Y.Z` findet (`release:publish`).
+- Alle Punkte aus [WINDOWS-TESTPLAN.md](WINDOWS-TESTPLAN.md) → „Updates (ab 0.4.0)“.
 
 ## OMP-18.4.10-Migration
 
@@ -22,9 +44,9 @@ Alle Läufe verwendeten isolierte temporäre Profile, lokale Modellfixtures und 
 
 ## Auf Windows offen
 
-Ein tatsächlicher Windows-Lauf bleibt zwingend separat: Start der x64-EXE, native Dialoge, OAuth, Bildinferenz, CPU-/Vulkan-Modellinferenz, GPU-Treiberverträglichkeit und Prozessbereinigung sind auf einem Windows-Rechner noch nicht nachgewiesen. Details stehen in [WINDOWS-TESTPLAN.md](WINDOWS-TESTPLAN.md). Die App ist nicht signiert und besitzt keinen automatischen Updater.
+Ein tatsächlicher Windows-Lauf bleibt zwingend separat: Start der x64-EXE, native Dialoge, OAuth, Bildinferenz, CPU-/Vulkan-Modellinferenz, GPU-Treiberverträglichkeit und Prozessbereinigung sind auf einem Windows-Rechner noch nicht nachgewiesen. Details stehen in [WINDOWS-TESTPLAN.md](WINDOWS-TESTPLAN.md). Die App ist nicht signiert; der automatische Updater ist auf Windows noch nicht ausgeführt worden (siehe „0.4.0 – Updates“).
 
-## Paketierung
+## Paketierung (Stand 0.3.0, ZIP)
 
 Electron 44.4.5, electron-builder 26.15.3, OMP 18.4.10. Das Paket enthält `Pi Desk.exe`, Electron/Node, `resources/app.asar`, `resources/runtime/omp.exe`, Lizenzen, Startanleitung, README und Windows-Testliste. Keine Nutzerprofile oder Zugangsdaten wurden übernommen.
 

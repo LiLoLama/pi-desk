@@ -1,17 +1,16 @@
-# Pi Desk für Windows · 0.3.0
+# Pi Desk für Windows · 0.4.0
 
 Eigenständiger Windows-Port in einem eigenen Ordner. Die native Mac-App bleibt unverändert. Der vorhandene OMP-Unterbau läuft in einer isolierten Electron-Desktop-App mit der bestehenden Quiet-Studio-Gestaltung.
 
 ## Start auf Windows
 
-1. `dist/Pi-Desk-0.3.0-Windows-x64.zip` vollständig auf einem Intel-/AMD-PC entpacken.
-2. **Pi Desk.exe** starten. Alle Begleitdateien zusammenlassen.
-3. Anbieter verbinden oder unter Einstellungen einen kompatiblen Modellserver hinzufügen.
-4. Mit **Strg+O** einen Projektordner öffnen, Modell wählen und Nachricht senden.
+1. `Pi-Desk-0.4.0-Windows-x64-Setup.exe` ausführen (keine Administratorrechte). Pi Desk aus Startmenü oder Desktopverknüpfung öffnen.
+2. Anbieter verbinden oder unter Einstellungen einen kompatiblen Modellserver hinzufügen.
+3. Mit **Strg+O** einen Projektordner öffnen, Modell wählen und Nachricht senden.
 
 Electron, Node und OMP 18.4.10 sind enthalten. Für die grundlegende App ist keine Node-/Bun-Installation erforderlich. Git wird für Git-Funktionen und Worktrees zusätzlich benötigt; bestimmte externe Plugins können eigene Voraussetzungen haben. WSL ist für den App-Start keine Voraussetzung.
 
-Das Paket ist nicht signiert und enthält keinen automatischen Updater. Es ist ein ZIP mit startbarer EXE, kein Setup-Installer. Windows ARM64 wurde nicht gebaut.
+Das Setup ist nicht signiert; SmartScreen kann beim ersten Start warnen. Bisherige ZIP-Nutzer installieren einmal das Setup; Daten unter `%LOCALAPPDATA%\Pi Desk` bleiben erhalten. Windows ARM64 wurde nicht gebaut.
 
 ## Funktionen
 
@@ -45,11 +44,19 @@ Das Paket ist nicht signiert und enthält keinen automatischen Updater. Es ist e
 
 Die ersten drei Kürzel und das Kürzel für Dateien/Vorschau lassen sich anpassen. Bearbeiten einer Nachricht erzeugt einen Entwurf; erneutes Senden ergänzt den Verlauf. Bereits an OMP übergebene Steuerungsnachrichten lassen sich nicht einzeln zurückziehen.
 
+## Updates
+
+Pi Desk sucht 10 Sekunden nach dem Start und danach alle 6 Stunden nach einer neuen Version. Gibt es eine, erscheint der Changelog mit **Jetzt aktualisieren**, **Später** und **Diese Version überspringen**. Während ein Agent arbeitet oder eine Anmeldung läuft, wird nur geladen und beim nächsten Beenden installiert. **Einstellungen → Updates** schaltet die automatische Suche ab oder prüft sofort; ebenso **Datei → Nach Updates suchen …**.
+
+**Später** blendet den Hinweis bis zum nächsten Start aus, **Diese Version überspringen** wird gespeichert. Updates sind immer ein vollständiger Setup-Download (keine Differenzupdates) und werden pro Benutzer installiert, ohne Administratorrechte.
+
+Quelle ist `updates/windows/latest.yml` in diesem Repository (über raw.githubusercontent.com); das Setup selbst ist ein Anhang am GitHub-Release. electron-updater 6.8.9 prüft die SHA-512-Prüfsumme. Ohne Code-Signatur hängt die Echtheit an der Sicherheit des GitHub-Kontos. Protokoll: `%LOCALAPPDATA%\Pi Desk\desktop\logs\updates.log`.
+
 ## Grenzen und Teststand
 
 Die Funktionen sind weitgehend zugänglich, aber nicht in jedem Detail identisch mit SwiftUI: MLX ist auf Windows nicht verfügbar; der Pi-Begleiter ist vereinfacht; Todos verwenden zusätzlich einen JSON-Editor, Subagenten eine einfache Verlaufsansicht. Es gibt kein eingebettetes interaktives Terminal und keine gerenderte Web-/PDF-Vorschau. Handoff kann bei kurzen oder bereits komprimierten Sitzungen vom Agenten abgelehnt werden. Geschützte Hugging-Face-Modelle mit zusätzlicher Anmeldung sind nicht Teil des Download-Dialogs.
 
-Gemeinsame Logik, echte OMP-18.4.10-Prozesse und die Electron-Oberfläche wurden auf macOS mit isolierten Profilen geprüft. Ein tatsächlicher Windows-Lauf, Windows-OAuth, Bildinferenz und CPU-/GPU-Inferenz müssen auf Windows geprüft werden. Externe Plugin-Installation wurde nicht ausgelöst. Details: [VERIFICATION.md](VERIFICATION.md). Für deinen Test: [WINDOWS-TESTPLAN.md](WINDOWS-TESTPLAN.md).
+Gemeinsame Logik, echte OMP-18.4.10-Prozesse und die Electron-Oberfläche wurden auf macOS mit isolierten Profilen geprüft. Ein tatsächlicher Windows-Lauf, Windows-OAuth, Bildinferenz und CPU-/GPU-Inferenz müssen auf Windows geprüft werden. Externe Plugin-Installation wurde nicht ausgelöst. Der Update-Ablauf wurde auf macOS mit Unit-Tests und dem Desktop-Smoke geprüft; Setup-Installation und Update-Lauf auf Windows stehen aus. Details: [VERIFICATION.md](VERIFICATION.md). Für deinen Test: [WINDOWS-TESTPLAN.md](WINDOWS-TESTPLAN.md).
 
 ## Daten und Rechte
 
@@ -70,7 +77,7 @@ npm run build:win
 
 Für die Entwicklung: `npm run runtime:win`, anschließend `npm start`. Wenn npm Installationsskripte blockiert, muss das offizielle Electron-Installationsskript freigegeben werden. Die Downloads sind mit SHA-256 fixiert, npm-Abhängigkeiten im Lockfile.
 
-`npm run build:installer` ist für einen zusätzlichen NSIS-Installer unter Windows vorbereitet. Hier konnte kein Setup erstellt werden, weil der Intel-Mac-NSIS-Compiler auf dem ARM-Mac nicht ausführbar war. Der ZIP-Build funktioniert unabhängig davon.
+`npm run build:win` erzeugt das NSIS-Setup `dist/Pi-Desk-<Version>-Windows-x64-Setup.exe` samt `latest.yml` und läuft nur unter Windows.
 
 Mac-Entwicklung mit passender OMP-Binary:
 
@@ -78,11 +85,21 @@ Mac-Entwicklung mit passender OMP-Binary:
 PI_DESK_OMP="$PWD/../macos/runtime/omp" npm start
 ```
 
+## Release veröffentlichen
+
+1. Version in `package.json` erhöhen, Abschnitt in `CHANGELOG.md` schreiben, committen und pushen.
+2. GitHub → Actions → **Windows-Release** → *Run workflow* (oder `gh workflow run windows-release.yml`). Der Workflow lässt sich erst starten, wenn die Workflow-Datei auf dem Standardzweig `main` liegt. Ergebnis: Entwurfs-Release `windows-vX.Y.Z` mit Setup, `latest.yml` und `SHA256SUMS-windows.txt`.
+3. `npm run release:feed` schreibt `updates/windows/latest.yml` lokal. Entwurf herunterladen und testen.
+4. `npm run release:publish` veröffentlicht nach Rückfrage („ja“) das Release und pusht nur den Feed. Ab dann sehen Nutzer das Update.
+
+Zurückrollen: Feed-Commit zurücksetzen. Bereits aktualisierte Installationen bleiben auf der Version.
+
 ## Quellen und Lizenzen
 
 - [Oh My Pi 18.4.10](https://github.com/can1357/oh-my-pi/releases/tag/v18.4.10)
 - [llama.cpp b11013](https://github.com/ggml-org/llama.cpp/releases/tag/b11013)
 - [Electron-Sicherheitsrichtlinien](https://www.electronjs.org/docs/latest/tutorial/security)
 - [Marked](https://marked.js.org/) und [DOMPurify](https://github.com/cure53/DOMPurify)
+- [electron-updater](https://www.electron.build/auto-update) 6.8.9 mit seinen Laufzeitabhängigkeiten
 
-Drittanbieterhinweise liegen unter `licenses/` und im Paket unter `resources/licenses/`. Electron-Lizenzen liegen ebenfalls im Paket.
+Drittanbieterhinweise liegen unter `licenses/` und im Paket unter `resources/licenses/`. Die Lizenztexte von electron-updater und dessen Laufzeitabhängigkeiten stehen in `licenses/ELECTRON-UPDATER-NOTICES.txt`. Electron-Lizenzen liegen ebenfalls im Paket.

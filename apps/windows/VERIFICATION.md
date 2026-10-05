@@ -1,4 +1,17 @@
-# Windows-Port 0.3.0 – Prüfstand 02.10.2026
+# Windows-Port 0.3.1 – Prüfstand 05.10.2026
+
+## Kontextlänge lokaler Modelle · 05.10.2026
+
+Anlass: Rückmeldung aus der Community unter Windows. Ministral 3 3B (GGUF, CPU) scheiterte mit Fehler 400, weil die Engine fest mit 8.192 Tokens Kontext startete und der Agenten-Prompt bereits rund 9.900 Tokens hatte.
+
+- `--ctx-size` ist nicht mehr fest 8192, sondern je Modell wählbar: Stufen ab 16k bis zur Trainingslänge aus dem GGUF-Kopf (höchstens 1M, Standard 32k), gespeichert in `local-models.json`. Derselbe Wert wird OMP als `contextWindow` gemeldet.
+- Pro Stufe wird Modell plus f16-KV-Cache geschätzt; Stufen über 85 % des Arbeitsspeichers sind gesperrt (auch serverseitig), über 65 % als knapp markiert. Der GGUF-Kopf wird gepuffert gelesen, große Tokenizer-Listen werden übersprungen, Gewichte nie geladen.
+- Änderung bei geladenem Modell oder laufendem Vorgang wird abgewiesen; nach einem Engine-Absturz ist sie möglich.
+- 19/19 Node-Tests, darunter synthetischer GGUF-Kopf über 1 MB, schichtweise KV-Köpfe, MLX-`text_config`, Speicherstufen bei 16/128 GB, Persistenz und Sperren.
+- Engine-Start mit aufzeichnender `llama-server`-Attrappe: `--ctx-size 65536` übergeben, `contextWindow: 65536` in `models.yml`.
+- Electron: Modellzeile zeigt Stufen 16k–1M mit Bedarf, sperrt 1M (ca. 129,5 GB bei 128 GB RAM) und speichert 512k.
+- Grenze: Sliding-Window-/Hybrid-Attention wird nicht herausgerechnet; die Schätzung liegt dort zu hoch. Grafikspeicher bei Vulkan wird nicht gemessen.
+- Auf Windows offen: echte CPU-/Vulkan-Inferenz mit 32k Kontext und ein vollständiger Agentenlauf mit einem kleinen lokalen Modell.
 
 ## OMP-18.4.10-Migration
 
@@ -28,11 +41,13 @@ Ein tatsächlicher Windows-Lauf bleibt zwingend separat: Start der x64-EXE, nati
 
 Electron 44.4.5, electron-builder 26.15.3, OMP 18.4.10. Das Paket enthält `Pi Desk.exe`, Electron/Node, `resources/app.asar`, `resources/runtime/omp.exe`, Lizenzen, Startanleitung, README und Windows-Testliste. Keine Nutzerprofile oder Zugangsdaten wurden übernommen.
 
-- Datei: `dist/Pi-Desk-0.3.0-Windows-x64.zip`
-- Größe: 269.411.471 Bytes
-- SHA-256: `4b783165374e45abb2a068ee48753d614be730298e787775e8fd60a59871bb7d`
+- Datei: `dist/Pi-Desk-0.3.1-Windows-x64.zip` (05.10.2026)
+- Größe: 269.414.566 Bytes
+- SHA-256: `d1347531edc8ebfb3e48198a21a0eaff168843a2ee891a23b96c39085216eb36`
 - ZIP-CRC vollständig geprüft
 - `Pi Desk.exe` und `resources/runtime/omp.exe`: PE32+ x86-64 bestätigt
 - OMP-Runtime im Paket bytegenau gegen die offizielle Prüfsumme geprüft
+- `app.asar` enthält Version 0.3.1, die Kontextplanung in `local-models.mjs` und die Auswahl je Modell in `public/features.js`; `START.txt`, `README-WINDOWS.md` und Testliste tragen 0.3.1
+- Vorgänger `Pi-Desk-0.3.0-Windows-x64.zip` (SHA-256 `4b783165…bb7d`) bleibt unverändert im Ordner
 
 Kein Setup.exe: `npm run build:installer` bleibt für einen echten Windows-Build vorbereitet. Windows ARM64 wurde nicht gebaut.

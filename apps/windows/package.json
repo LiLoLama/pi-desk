@@ -1,6 +1,6 @@
 {
   "name": "pi-desk-windows",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "Pi Desk für Windows – lokale Desktop-Oberfläche für Oh My Pi",
   "private": true,
   "type": "module",

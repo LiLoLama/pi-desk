@@ -117,3 +117,13 @@ Removed macOS shared toolbar capsules and the persistent sidebar search field. V
 ## Release-Paket vom 02.10.2026
 
 Neu gebaut: `Pi-Desk-0.2.0-apple-silicon.dmg` (155.724.006 Bytes). SHA-256: `9d50f2011a1b3bec83be5ad68d821ca19e3f0ffb65f0e822c64b8f1b7685b82d`. 15 Node-Tests, Runtime-/HTTP-/Settings-/Capabilities-Smokes, Swift-Typecheck, nativer Build, strikte tiefe Signaturprüfung, DMG-Integrität und der Inhalt der gemounteten Disk-Image-App wurden geprüft. Ad-hoc signiert, nicht notarisiert.
+
+## Kontextlänge lokaler Modelle · 05.10.2026
+
+- Die GGUF-Engine startete fest mit `--ctx-size 8192`, und OMP wurde für jedes verwaltete lokale Modell `contextWindow: 8192` gemeldet. Das ist kleiner als der Agenten-Prompt (rund 10k Tokens); gemeldet aus einem Windows-Test, auf dem Mac identisch im Code.
+- Kontextlänge jetzt je Modell wählbar: Stufen ab 16k bis zur Trainingslänge (GGUF-Kopf bzw. `config.json`, höchstens 1M, Standard 32k), gespeichert in `local-models.json`, als `--ctx-size` an llama.cpp und als `contextWindow` an OMP übergeben. MLX erhält keinen Engine-Parameter; der Wert gilt dort als Planungsgrenze.
+- Pro Stufe Schätzung aus Modellgröße und KV-Cache; über 85 % des Arbeitsspeichers gesperrt (auch serverseitig), über 65 % als knapp markiert.
+- 19/19 Node-Tests einschließlich Parser-, Speicherstufen- und Sperrtests; Engine-Start mit `llama-server`-Attrappe bestätigt `--ctx-size 65536` und `contextWindow: 65536`. Swift-Quellen typgeprüft (`swiftc -typecheck`).
+- Nur lesend gegen sechs vorhandene Modelle im LM-Studio-Ordner geprüft (MLX und GGUF): Trainingslängen 128k–256k erkannt, Bedarf plausibel. Bei Gemma 4, gpt-oss und hybriden Qwen-Modellen liegt die Schätzung zu hoch, weil Sliding-Window-/lineare Attention nicht herausgerechnet wird.
+- Gebaute App (`native/build.py`, Signatur geprüft) mit isoliertem `PI_DESK_DATA`-Profil: Modellzeilen zeigen „trainiert bis …“ und die Kontextauswahl mit Bedarf; eine geänderte Auswahl (Gemma 4 auf 64k) bleibt nach Neustart erhalten. Beschriftung einzeilig, Menüfelder in Inhaltsbreite linksbündig. Das Aufklappen gesperrter Menüeinträge wurde nicht per Bildschirmfoto belegt.
+- Nicht geprüft: echte GGUF-/MLX-Inferenz mit großem Kontext.

@@ -1,4 +1,4 @@
-Pi Desk für Windows – Version 0.3.0 (x64)
+Pi Desk für Windows – Version 0.3.1 (x64)
 
 1. Das gesamte ZIP in einen lokalen Ordner entpacken.
 2. Pi Desk.exe öffnen. Alle Begleitdateien zusammenlassen.
@@ -9,7 +9,10 @@ Node und Oh My Pi sind enthalten. Git ist für Git-Funktionen zusätzlich nötig
 Enter: senden/einreihen. Shift+Enter: Absatz. Alt+Enter: sofortige Steuerung.
 Strg+K: Suche. Strg+,: Einstellungen.
 
-Neu: Skills, MCP, Plugins/Hooks, Projektregeln, Worktrees, lokale GGUF-Engine,
+Neu in 0.3.1: Kontextlänge je lokalem Modell wählbar (Standard 32k) mit
+Speicherschätzung; behebt Fehler 400 der eingebauten Engine (vorher fest 8k).
+
+Seit 0.3.0: Skills, MCP, Plugins/Hooks, Projektregeln, Worktrees, lokale GGUF-Engine,
 Bildanhänge, Sitzungswerkzeuge, Todos/Subagenten, Papierkorb, Darstellung,
 gespeicherte Werkzeugfreigaben und einzeln entfernbare Folgeaufträge.
 

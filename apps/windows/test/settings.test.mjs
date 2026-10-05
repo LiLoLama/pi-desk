@@ -35,3 +35,12 @@ test('settings preserve existing models, redact secrets, validate changes and re
  await writeFile(store.models,'providers: [bad\n');await assert.rejects(reopened.saveAgent({instructions:'x',thinking:'auto'}),/YAML/);
  }finally{await rm(root,{recursive:true,force:true});}
 });
+test('managed local model reports the engine context window to OMP',async()=>{
+ const root=await mkdtemp(path.join(os.tmpdir(),'pi-managed-ctx-'));try{
+ const store=new SettingsStore(root);await store.recover();
+ await store.managedLocal({name:'Ministral',kind:'openai',baseUrl:'http://127.0.0.1:4555/v1',models:['local'],apiKey:'k',contextWindow:65536});
+ assert.equal(parse(await readFile(store.models,'utf8')).providers['pi-desk-local'].models[0].contextWindow,65536);
+ await store.managedLocal({name:'Ministral',kind:'openai',baseUrl:'http://127.0.0.1:4555/v1',models:['local'],apiKey:'k'});
+ assert.equal(parse(await readFile(store.models,'utf8')).providers['pi-desk-local'].models[0].contextWindow,32768);
+ }finally{await rm(root,{recursive:true,force:true});}
+});

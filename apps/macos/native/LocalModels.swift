@@ -23,6 +23,33 @@ struct LocalModelsView: View {
   private var active: Object { state["active"] as? Object ?? [:] }
   private var folders: [String] { state["folders"] as? [String] ?? [] }
   private var models: [Object] { state["models"] as? [Object] ?? [] }
+  private func tokens(_ n: Int) -> String { n >= 1_048_576 ? "\(n / 1_048_576)M" : "\(n / 1024)k" }
+  private func contextLabel(_ option: Object) -> String {
+    let n = (option["size"] as? NSNumber)?.intValue ?? 0
+    let bytes = (option["bytes"] as? NSNumber)?.doubleValue ?? 0
+    let need = bytes > 0 ? "ca. " + (bytes / pow(1024.0, 3)).formatted(.number.precision(.fractionLength(1))) + " GB" : "Bedarf unbekannt"
+    let fit = ["tight": " · knapp", "too-large": " · zu groß für diesen Mac"][option["fit"] as? String ?? ""] ?? ""
+    return "\(tokens(n)) Tokens · \(need)\(fit)" + (option["tooSmall"] as? Bool == true ? " · zu klein für den Agenten" : "")
+  }
+  private func contextPicker(_ model: Object, locked: Bool) -> some View {
+    let id = model["id"] as? String ?? ""
+    let context = model["context"] as? Object ?? [:]
+    let options = context["options"] as? [Object] ?? []
+    return HStack(spacing: 8) {
+      Text("Kontext").font(.caption).foregroundStyle(.secondary).fixedSize()
+      Picker("Kontext", selection: Binding(
+        get: { (context["size"] as? NSNumber)?.intValue ?? 32768 },
+        set: { action("context", ["id": id, "contextSize": $0]) }
+      )) {
+        ForEach(options.indices, id: \.self) { i in
+          Text(contextLabel(options[i])).tag((options[i]["size"] as? NSNumber)?.intValue ?? 0)
+            .selectionDisabled(options[i]["disabled"] as? Bool ?? false)
+        }
+      }.pickerStyle(.menu).labelsHidden().fixedSize().font(.caption)
+      Spacer(minLength: 0)
+    }.disabled(locked || options.isEmpty)
+      .help(locked ? "Zum Ändern das Modell zuerst entladen." : "Gilt beim nächsten Laden.")
+  }
   private func size(_ value: Any?) -> String {
     ByteCountFormatter.string(fromByteCount: (value as? NSNumber)?.int64Value ?? 0, countStyle: .file)
   }
@@ -169,8 +196,9 @@ struct LocalModelsView: View {
                 Image(systemName: "cpu").foregroundStyle(.secondary).padding(.top, 2)
                 VStack(alignment: .leading, spacing: 5) {
                   Text(model["name"] as? String ?? "Modell").font(.system(size: 13, weight: .medium)).lineLimit(2)
-                  Text("\((model["format"] as? String ?? "").uppercased()) · \(size(model["bytes"])) · \(model["fit"] as? String ?? "")")
+                  Text("\((model["format"] as? String ?? "").uppercased()) · \(size(model["bytes"])) · \(model["fit"] as? String ?? "")" + (((model["context"] as? Object)?["max"] as? NSNumber).map { " · trainiert bis " + tokens($0.intValue) } ?? ""))
                     .font(.caption).foregroundStyle(.secondary)
+                  contextPicker(model, locked: running || working || (isActive && active["state"] as? String == "ready"))
                 }
                 Spacer(minLength: 8)
                 if isActive && active["state"] as? String == "ready" {
@@ -194,7 +222,7 @@ struct LocalModelsView: View {
           }
         }
       }
-      Text("Beim ersten Laden richtet Pi Desk die passende Engine ein. Ein Modell gleichzeitig; Entladen gibt Speicher frei. Speicherpassung ist eine Schätzung – Architektur und Werkzeugaufrufe hängen vom Modell ab.")
+      Text("Beim ersten Laden richtet Pi Desk die passende Engine ein. Ein Modell gleichzeitig; Entladen gibt Speicher frei. Kontextlänge je Modell bis zur trainierten Länge; der Bedarf schätzt Modell plus Kontextspeicher, nicht Passendes ist gesperrt. Der Agent braucht allein für Anweisungen und Werkzeuge rund 10k Tokens. Speicherpassung ist eine Schätzung – Architektur und Werkzeugaufrufe hängen vom Modell ab.")
         .font(.caption2).foregroundStyle(.secondary)
     }
   }

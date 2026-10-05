@@ -1,10 +1,10 @@
-# Pi Desk für Windows · 0.3.0
+# Pi Desk für Windows · 0.3.1
 
 Eigenständiger Windows-Port in einem eigenen Ordner. Die native Mac-App bleibt unverändert. Der vorhandene OMP-Unterbau läuft in einer isolierten Electron-Desktop-App mit der bestehenden Quiet-Studio-Gestaltung.
 
 ## Start auf Windows
 
-1. `dist/Pi-Desk-0.3.0-Windows-x64.zip` vollständig auf einem Intel-/AMD-PC entpacken.
+1. `dist/Pi-Desk-0.3.1-Windows-x64.zip` vollständig auf einem Intel-/AMD-PC entpacken.
 2. **Pi Desk.exe** starten. Alle Begleitdateien zusammenlassen.
 3. Anbieter verbinden oder unter Einstellungen einen kompatiblen Modellserver hinzufügen.
 4. Mit **Strg+O** einen Projektordner öffnen, Modell wählen und Nachricht senden.
@@ -27,7 +27,7 @@ Das Paket ist nicht signiert und enthält keinen automatischen Updater. Es ist e
 - Skills verknüpfen/aktivieren, MCP-Verbindungen anlegen/bearbeiten/testen, lokale Plugins/Hooks und externe Plugin-Quellen verwalten.
 - Erweiterte Agent-Einstellungen, Projektregeln bearbeiten, Git-Worktrees anlegen/öffnen/entfernen. Worktrees mit lokalen Änderungen werden nicht gelöscht.
 - Schriftgröße, reduzierte Bewegung, vier anpassbare Tastenkürzel und ein optionaler kleiner Pi-Begleiter.
-- Lokale GGUF-Modelle finden, herunterladen, laden und verwenden. Die Windows-Engine wird bei Bedarf als geprüfter CPU- oder Vulkan-Download eingerichtet. Alternativ Ollama, LM Studio oder kompatible API verbinden.
+- Lokale GGUF-Modelle finden, herunterladen, laden und verwenden. Die Windows-Engine wird bei Bedarf als geprüfter CPU- oder Vulkan-Download eingerichtet. Die Kontextlänge ist je Modell wählbar, bis zur in der Modelldatei hinterlegten Trainingslänge (höchstens 1M Tokens, Standard 32k). Jede Stufe zeigt den geschätzten Speicherbedarf; was für den Arbeitsspeicher voraussichtlich zu groß ist, ist gesperrt. Mit Vulkan zählt zusätzlich der Grafikspeicher. Alternativ Ollama, LM Studio oder kompatible API verbinden.
 
 ## Bedienung
 

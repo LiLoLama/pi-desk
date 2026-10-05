@@ -8,7 +8,7 @@ Setup (NSIS, pro Benutzer, unsigniert, keine Differenzupdates) und automatische 
 
 ### Auf macOS nachgewiesen
 
-- `npm test`: 58 von 58 Tests bestanden (nach Übernahme von 0.3.1, einschließlich der vier Tests zur Kontextlänge), davon 26 in `test/updates.test.mjs` (Updater-Konfiguration, Prüfzyklus, Überspringen, Später, Download und Installation, Fehlerfälle, Dateispeicher), 7 in `test/release.test.mjs` (Feed-Erzeugung und Prüfung vor dem Veröffentlichen) und 6 in `test/changelog.test.mjs` (Parsen und Filtern der Changelog-Abschnitte). Die Unit-Tests simulieren electron-updater; sie wurden plattformneutral geschrieben, liefen bisher aber nur auf macOS.
+- `npm test`: 60 von 60 Tests bestanden (nach Übernahme von 0.3.1, einschließlich der vier Tests zur Kontextlänge), davon 28 in `test/updates.test.mjs` (Updater-Konfiguration, Prüfzyklus, Überspringen, Später, Download und Installation, Fehlerfälle, Dateispeicher, Installationsentscheidung bei unbekanntem Agentenzustand, erneuter Bereit-Hinweis nach manueller Suche), 7 in `test/release.test.mjs` (Feed-Erzeugung und Prüfung vor dem Veröffentlichen) und 6 in `test/changelog.test.mjs` (Parsen und Filtern der Changelog-Abschnitte). Die Unit-Tests simulieren electron-updater; sie wurden plattformneutral geschrieben, liefen bisher aber nur auf macOS.
 - `npm run test:desktop` (mit der Mac-OMP-Runtime): Electron-Smoke bestanden. Er prüft die Update-Schnittstelle `window.piDesktop.updates` (ohne Feed-URL im Renderer), die Einstellungsseite „Updates“, den Update-Dialog (verfügbar, bereit, aktuell), dass der Einstellungsdialog bei einem Statuswechsel nicht wieder aufgeht, dass der Dialog während des Ladens versteckt bleibt und bei „bereit“ erscheint, sowie das Bereinigen von HTML und Links in den Release-Notizen. Der Smoke bedient nur die Oberfläche mit simulierten Statuswerten, nicht den echten Updater. `verification/update.png` wird beim Smoke erzeugt und nicht eingecheckt (in `.gitignore`).
 - Die Release-Skripte sind nur über ihre Unit-Tests abgedeckt. Workflow und `gh`-Aufrufe wurden nicht ausgeführt.
 
@@ -19,7 +19,7 @@ Setup (NSIS, pro Benutzer, unsigniert, keine Differenzupdates) und automatische 
 - Echte Installation des Setups auf Windows (Installationsart „Nur für mich“ ohne Administratorrechte, Startmenü, Desktopverknüpfung, Übernahme der Daten aus der ZIP-Version).
 - Update-Lauf 0.4.0 → 0.4.1 über Feed und Release-Anhang, inklusive SHA-512-Prüfung und Neustart ohne UAC-Abfrage.
 - SmartScreen-Verhalten beim unsignierten Setup und beim automatisch geladenen Update.
-- Busy-Regel auf Windows: Mit laufendem Agenten oder Anmeldung nur laden und beim nächsten Beenden installieren.
+- Busy-Regel auf Windows: Mit laufendem Agenten, Anmeldung oder nicht abfragbarem Zustand nur laden und beim nächsten Beenden installieren. Die Entscheidung selbst (`installDecision`) ist per Unit-Test geprüft, der Ablauf in `main.cjs` nicht.
 - Dass `gh` den Entwurf über den Tag `windows-vX.Y.Z` findet (`release:publish`).
 - Alle Punkte aus [WINDOWS-TESTPLAN.md](WINDOWS-TESTPLAN.md) → „Updates (ab 0.4.0)“.
 

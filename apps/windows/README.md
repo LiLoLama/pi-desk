@@ -4,13 +4,17 @@ Eigenständiger Windows-Port in einem eigenen Ordner. Die native Mac-App bleibt 
 
 ## Start auf Windows
 
-1. `Pi-Desk-0.4.0-Windows-x64-Setup.exe` ausführen (Installation nur für den eigenen Benutzer, keine Administratorrechte nötig). Pi Desk aus Startmenü oder Desktopverknüpfung öffnen.
+1. `Pi-Desk-0.4.0-Windows-x64-Setup.exe` ausführen. Bei der Installation „Nur für mich“ wählen – dann sind keine Administratorrechte nötig und Updates laufen ohne Rückfrage. Pi Desk aus Startmenü oder Desktopverknüpfung öffnen.
 2. Anbieter verbinden oder unter Einstellungen einen kompatiblen Modellserver hinzufügen.
 3. Mit **Strg+O** einen Projektordner öffnen, Modell wählen und Nachricht senden.
 
 Electron, Node und OMP 18.4.10 sind enthalten. Für die grundlegende App ist keine Node-/Bun-Installation erforderlich. Git wird für Git-Funktionen und Worktrees zusätzlich benötigt; bestimmte externe Plugins können eigene Voraussetzungen haben. WSL ist für den App-Start keine Voraussetzung.
 
 Das Setup ist nicht signiert; SmartScreen kann beim ersten Start warnen. Bisherige ZIP-Nutzer installieren einmal das Setup; Daten unter `%LOCALAPPDATA%\Pi Desk` bleiben erhalten. Windows ARM64 wurde nicht gebaut.
+
+## GitHub-Download
+
+[Windows-Vorabversion 0.3.0](https://github.com/LiLoLama/pi-desk/releases/tag/windows-v0.3.0): ZIP für x64 mit startbarer EXE, ohne Setup und ohne automatische Updates. Die nächste Version 0.4.0 folgt als Setup mit automatischen Updates; bisherige ZIP-Nutzer installieren sie einmalig manuell.
 
 ## Funktionen
 
@@ -48,7 +52,7 @@ Die ersten drei Kürzel und das Kürzel für Dateien/Vorschau lassen sich anpass
 
 Pi Desk sucht 10 Sekunden nach dem Start und danach alle 6 Stunden nach einer neuen Version. Gibt es eine, erscheint der Changelog mit **Jetzt aktualisieren**, **Später** und **Diese Version überspringen**. Während ein Agent arbeitet, eine Anmeldung läuft oder der Zustand nicht abfragbar ist, wird nur geladen und beim nächsten Beenden installiert; „Jetzt neu starten“ fragt dann nach. Eine erneute Suche zeigt den Hinweis wieder. **Einstellungen → Updates** schaltet die automatische Suche ab oder prüft sofort; ebenso **Datei → Nach Updates suchen …**.
 
-**Später** blendet den Hinweis bis zum nächsten Start aus, **Diese Version überspringen** wird gespeichert. Updates sind immer ein vollständiger Setup-Download (keine Differenzupdates) und werden bei Installation nur für den eigenen Benutzer ohne Administratorrechte eingespielt.
+**Später** blendet den Hinweis bis zum nächsten Start aus, **Diese Version überspringen** wird gespeichert. Updates sind immer ein vollständiger Setup-Download (keine Differenzupdates). Wurde bei der Installation „Nur für mich“ gewählt, laufen sie ohne Administratorrechte und ohne Rückfrage; eine Installation für alle Benutzer fragt bei jedem Update nach Administratorrechten (UAC).
 
 Quelle ist `updates/windows/latest.yml` in diesem Repository (über raw.githubusercontent.com); das Setup selbst ist ein Anhang am GitHub-Release. electron-updater 6.8.9 prüft die SHA-512-Prüfsumme. Ohne Code-Signatur hängt die Echtheit an der Sicherheit des GitHub-Kontos. Protokoll: `%LOCALAPPDATA%\Pi Desk\desktop\logs\updates.log`.
 
@@ -91,6 +95,7 @@ PI_DESK_OMP="$PWD/../macos/runtime/omp" npm start
 2. GitHub → Actions → **Windows-Release** → *Run workflow* (oder `gh workflow run windows-release.yml`). Der Workflow lässt sich erst starten, wenn die Workflow-Datei auf dem Standardzweig `main` liegt. Ergebnis: Entwurfs-Release `windows-vX.Y.Z` mit Setup, `latest.yml` und `SHA256SUMS-windows.txt`.
 3. `npm run release:feed` schreibt `updates/windows/latest.yml` lokal. Entwurf herunterladen und testen.
 4. `npm run release:publish` veröffentlicht nach Rückfrage („ja“) das Release, committet nur den Feed und pusht `main`; das Skript läuft nur auf dem Branch `main`. Ab dann sehen Nutzer das Update.
+5. Nach dem Ausrollen: Download-Links in README.md und im App-README auf die neue Version umstellen (eigener Commit).
 
 Zurückrollen: Feed-Commit zurücksetzen. Bereits aktualisierte Installationen bleiben auf der Version.
 

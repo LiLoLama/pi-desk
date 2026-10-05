@@ -6,7 +6,7 @@ Lokale grafische Oberfläche für [Oh My Pi](https://github.com/can1357/oh-my-pi
 
 Die fertige Anwendung liegt unter **`dist/Pi Desk.app`**. Zum Verschicken an einen anderen Apple-Silicon-Mac: **`dist/Pi-Desk-0.3.0-apple-silicon.dmg`**. Per Doppelklick starten; optional nach `Programme` verschieben. Node und OMP sind enthalten, ein Terminal oder Browserfenster wird für die Bedienung nicht benötigt. Die Oberfläche besteht aus **SwiftUI und AppKit**, ohne WebView/Electron.
 
-Apple Silicon, Build-Ziel macOS 14 oder neuer; auf dem aktuellen Mac getestet. Releases sind mit Developer ID signiert und von Apple notarisiert. Lokale Builds ohne `PI_DESK_SIGN_ID` bleiben ad-hoc signiert.
+Apple Silicon, Build-Ziel macOS 14 oder neuer; auf dem aktuellen Mac getestet. Ab 0.3.0 werden Releases mit Developer ID signiert und von Apple notarisiert. Die derzeit veröffentlichte 0.2.0 ist noch ad-hoc signiert und nicht notarisiert. Lokale Builds ohne `PI_DESK_SIGN_ID` bleiben ad-hoc signiert.
 
 1. **Anbieter verbinden**: bestehendes Anbieter-Abo über OMP anmelden. Die externe Autorisierungsseite öffnet sich im Standardbrowser; Codes/Weiterleitungsadressen werden im nativen Dialog eingegeben.
 2. **⌘O** öffnet die native macOS-Ordnerauswahl.
@@ -61,9 +61,10 @@ Quelle ist `updates/macos/appcast.xml` in diesem Repository; das DMG selbst ist 
 Einmalig: Sparkle-Schlüssel (`vendor/sparkle/bin/generate_keys`, privat im Schlüsselbund und Passwortmanager) und Notarisierungsprofil (`xcrun notarytool store-credentials pi-desk-notary …`).
 
 1. Version in `package.json` erhöhen, Abschnitt in `CHANGELOG.md` schreiben.
-2. `PI_DESK_SIGN_ID="Developer ID Application: …" PI_DESK_NOTARY_PROFILE=pi-desk-notary npm run release:draft`: Build, Notarisierung, DMG, EdDSA-Signatur, Entwurfs-Release `macos-vX.Y.Z`, lokale Änderung an `updates/macos/appcast.xml`. Das Skript prüft vorab Branch `main`, sauberen Arbeitsbaum und `HEAD == origin/main` und weist Test-Feed-Builds ab.
+2. `PI_DESK_SIGN_ID="Developer ID Application: …" PI_DESK_NOTARY_PROFILE=pi-desk-notary npm run release:draft`: Build, Notarisierung, DMG, EdDSA-Signatur, Entwurfs-Release `macos-vX.Y.Z`, lokale Änderung an `updates/macos/appcast.xml`. Das Skript prüft vorab Branch `main`, sauberen Arbeitsbaum, `HEAD == origin/main` und ob der Sparkle-Schlüssel im Schlüsselbund zu `native/sparkle-public-key.txt` passt, und weist Test-Feed-Builds ab. Das DMG enthält die Drittanbieter-Lizenzen im Ordner `Lizenzen`.
 3. Entwurf herunterladen und testen.
-4. `npm run release:publish` prüft zuerst Entwurf und DMG-Größe gegen den Feed und fragt erst danach („ja“). Dann veröffentlicht es das Release, committet nur den Feed und pusht `main`. Beide Release-Befehle brauchen eine angemeldete `gh`-CLI; das Release bleibt als Vorabversion markiert (`--prerelease`).
+4. `npm run release:publish` prüft zuerst Entwurf und DMG-Größe gegen den Feed und fragt erst danach („ja“). Dann veröffentlicht es das Release, committet nur den Feed und pusht `main`. Beide Release-Befehle brauchen eine angemeldete `gh`-CLI; das Release bleibt als Vorabversion markiert (`--prerelease`). Scheitert der Push, ist das Release bereits öffentlich: dann `updates/macos/appcast.xml` manuell committen und pushen.
+5. Nach dem Ausrollen: Download-Links in README.md und im App-README auf die neue Version umstellen (eigener Commit).
 
 Zurückrollen: Feed-Commit zurücksetzen und den Revert pushen. `raw.githubusercontent.com` cached etwa 5 Minuten, bis dahin liefert der Feed noch den alten Stand. Das GitHub-Release bleibt öffentlich, bis es manuell zurückgezogen wird. Bereits aktualisierte Installationen bleiben auf der Version.
 
@@ -161,4 +162,6 @@ node test/local-engine-smoke.mjs /absoluter/pfad/zu/einem/MLX-Modell
 
 ## GitHub-Download
 
-[macOS-Vorabversion 0.3.0](https://github.com/LiLoLama/pi-desk/releases/tag/macos-v0.3.0): DMG für Apple Silicon mit OMP 18.4.10. Developer-ID-signiert und notarisiert, ab dieser Version mit automatischen Updates; einmalig manuell installieren. Drittanbieter-Lizenzen (OMP, YAML und Sparkle, siehe `licenses/SPARKLE-LICENSE.txt`) liegen im App-Paket und auf dem DMG.
+[macOS-Vorabversion 0.2.0](https://github.com/LiLoLama/pi-desk/releases/tag/macos-v0.2.0): DMG für Apple Silicon mit OMP 18.4.10. Ad-hoc signiert, nicht notarisiert. Drittanbieter-Lizenzen liegen im App-Paket und auf dem DMG.
+
+Die nächste Version 0.3.0 folgt mit automatischen Updates; sie wird Developer-ID-signiert und notarisiert und muss einmalig manuell installiert werden. Danach aktualisiert sich Pi Desk selbst. Ihre Drittanbieter-Lizenzen (OMP, YAML und Sparkle, siehe `licenses/SPARKLE-LICENSE.txt`) liegen im App-Paket und im DMG-Ordner `Lizenzen`.

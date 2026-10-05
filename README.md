@@ -4,10 +4,10 @@ Desktop-Oberflächen für Oh My Pi: eine native macOS-App und eine Windows-App a
 
 ## Downloads
 
-- [Windows 0.4.0 – Setup für x64](https://github.com/LiLoLama/pi-desk/releases/tag/windows-v0.4.0) – ab dieser Version mit automatischen Updates; einmalig manuell installieren
-- [macOS 0.3.0 – DMG für Apple Silicon](https://github.com/LiLoLama/pi-desk/releases/tag/macos-v0.3.0) – notarisiert, ab dieser Version mit automatischen Updates; einmalig manuell installieren
+- [Windows 0.3.0 – ZIP für x64](https://github.com/LiLoLama/pi-desk/releases/tag/windows-v0.3.0)
+- [macOS 0.2.0 – DMG für Apple Silicon](https://github.com/LiLoLama/pi-desk/releases/tag/macos-v0.2.0)
 
-Beide sind Vorabversionen. Windows ist noch nicht auf einem echten Windows-PC verifiziert. Hinweise und Prüfsummen stehen beim jeweiligen Release.
+Beide sind Vorabversionen. Windows ist noch nicht auf einem echten Windows-PC verifiziert; macOS ist ad-hoc signiert und nicht notarisiert. Hinweise und Prüfsummen stehen beim jeweiligen Release.
 
 ## Struktur
 
@@ -51,7 +51,7 @@ PI_DESK_OMP="$PWD/../macos/runtime/omp" npm start
 
 Build-Ergebnisse bleiben in `apps/macos/dist` bzw. `apps/windows/dist`. Abhängigkeiten, Runtime-Binaries und Builds sind lokal vorhanden, aber von Git ausgeschlossen. Für GitHub werden fertige Pakete als Release-Anhänge veröffentlicht, nicht als Quelldateien eingecheckt.
 
-Die Release-Pakete werden getrennt pro Plattform angeboten. Beide Apps enthalten OMP 18.4.10. macOS 0.3.0 wird mit `npm run release:draft` gebaut und notarisiert; Windows 0.4.0 wird über den Workflow „Windows-Release“ auf GitHub gebaut. Die plattformspezifischen Prüfberichte und Release-Hinweise benennen die verbleibenden Grenzen; insbesondere ersetzt ein macOS-Test keinen echten Windows-Lauf.
+Die Release-Pakete werden getrennt pro Plattform angeboten. Beide Apps enthalten OMP 18.4.10. Ab macOS 0.3.0 werden Releases mit `npm run release:draft` gebaut, signiert und notarisiert; ab Windows 0.4.0 baut der Workflow „Windows-Release“ auf GitHub das Setup. Die plattformspezifischen Prüfberichte und Release-Hinweise benennen die verbleibenden Grenzen; insbesondere ersetzt ein macOS-Test keinen echten Windows-Lauf.
 
 Update-Feeds liegen unter `updates/` und werden erst beim Ausrollen committet. Ablauf je Plattform im jeweiligen App-README.
 

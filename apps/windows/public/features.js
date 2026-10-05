@@ -23,7 +23,7 @@
  const contentDialog=(title,html)=>{clearInterval(localPoll);dialogContent(title,`<div id="feature-error" role="alert" hidden></div><div class="feature-content">${html}</div>`);$('#connect-dialog').classList.add('feature-dialog');};
  function showError(error){const banner=$('#feature-error');if(banner){banner.hidden=false;banner.textContent=error.message;}report(error);}
  function listing(title,rows,empty='Noch keine Einträge.'){return `<h3>${esc(title)}</h3>${rows||note(empty)}`;}
- const tabs=[['providers','Modelle & Anbieter'],['local','Lokale Modelle'],['agent','Agent'],['skills','Skills'],['mcp','MCP'],['plugins','Plugins & Hooks'],['appearance','Darstellung & Tastatur'],['rules','Projektregeln'],['worktrees','Git & Worktrees'],['archive','Archiv & Papierkorb']];
+ const tabs=[['providers','Modelle & Anbieter'],['local','Lokale Modelle'],['agent','Agent'],['skills','Skills'],['mcp','MCP'],['plugins','Plugins & Hooks'],['appearance','Darstellung & Tastatur'],['rules','Projektregeln'],['worktrees','Git & Worktrees'],['updates','Updates'],['archive','Archiv & Papierkorb']];
  function settingsShell(page,html){contentDialog('Einstellungen',`<div class="settings-layout"><nav class="settings-nav" aria-label="Einstellungsbereiche">${tabs.map(([id,label])=>button('settings-page',label,id,`aria-current="${id===page?'page':'false'}"`)).join('')}</nav><section class="settings-page">${html}</section></div>`);}
  async function settingsPage(page='providers'){
   if(page==='providers'){
@@ -51,6 +51,11 @@
   }else if(page==='archive'){
    state=await api('state');
    settingsShell(page,listing('Archiv',state.tasks.filter(t=>t.archivedAt&&!t.deletedAt).map(t=>row(t.title,'',button('task-restore','Wiederherstellen',t.id)+button('task-trash','In Papierkorb',t.id))).join(''))+listing('Papierkorb',state.tasks.filter(t=>t.deletedAt).map(t=>row(t.title,'',button('task-restore','Wiederherstellen',t.id)+button('task-purge','Endgültig löschen',t.id))).join(''))+button('trash-empty','Papierkorb leeren'));
+  }else if(page==='updates'){
+   const u=window.piDesktop?.updates;
+   if(!u)return settingsShell(page,note('Updates sind nur in der Desktop-App verfügbar.'));
+   const s=await u.state();
+   settingsShell(page,listing('Updates',row('Installierte Version',s.current,'')+row('Letzte Prüfung',s.lastCheck?new Date(s.lastCheck).toLocaleString('de-DE'):'Noch nicht geprüft',''))+`<label class="check-row"><input type="checkbox" data-update-auto ${s.auto?'checked':''}>Automatisch nach Updates suchen</label>`+button('update-check','Jetzt nach Updates suchen')+(s.phase==='upToDate'?note(`Pi Desk ${s.current} ist aktuell.`):'')+(s.phase==='error'?`<p class="error-line">${esc(s.error)}</p>`:'')+note('Pi Desk sucht beim Start und danach alle 6 Stunden. Vor jeder Installation siehst du, was neu ist.'));
   }else if(page==='local')return showLocal();
  }
  openSettings=()=>settingsPage();showArchive=()=>settingsPage('archive');
@@ -103,9 +108,30 @@
   const flush=()=>{if(tools.length){html+=`<details class="tool-message"><summary>Arbeit · ${tools.length} Schritte</summary>${tools.map(m=>`<strong>${esc(m.toolName||'Werkzeug')}${m.isError?' · Fehlgeschlagen':''}</strong><pre>${esc(messageText(m))}</pre>`).join('')}</details>`;tools=[];}};
   messages.forEach((m,index)=>{if(m.role==='toolResult'){tools.push(m);return;}flush();if(!['user','assistant'].includes(m.role))return;const text=messageText(m).split('\n\n[Angehängter Dateikontext')[0];const thinking=Array.isArray(m.content)?m.content.filter(c=>c.type==='thinking').map(c=>c.thinking||c.text||'').join('\n'):'';const pics=Array.isArray(m.content)?m.content.filter(c=>c.type==='image'&&/^image\/(png|jpeg|webp|gif)$/.test(c.mimeType||'')&&/^[A-Za-z0-9+/=]+$/.test(c.data||'')):[];if(!text&&!thinking&&!pics.length)return;html+=`<div class="message ${m.role}">${thinking?`<details class="reasoning"><summary>Denkprozess</summary>${safeMarkdown(thinking)}</details>`:''}${text?(m.role==='user'?'<p>'+esc(text)+'</p>':safeMarkdown(text)):''}${pics.map(i=>`<img class="message-image" src="data:${i.mimeType};base64,${i.data}" alt="Gesendetes Bild">`).join('')}<div class="message-actions">${m.timestamp?`<time>${esc(new Date(m.timestamp).toLocaleTimeString('de',{hour:'2-digit',minute:'2-digit'}))}</time>`:''}${button('message-copy','Kopieren',index)}${button(m.role==='user'?'message-edit':'message-continue',m.role==='user'?'Bearbeiten':'In neuem Chat fortfahren',index)}</div></div>`;});flush();return html;
  };
+ const updateDialog=()=>{let d=$('#update-dialog');if(!d){d=document.createElement('dialog');d.id='update-dialog';d.className='connect-dialog update-dialog';d.setAttribute('aria-label','Pi Desk aktualisieren');d.addEventListener('cancel',e=>{e.preventDefault();dismissUpdate().catch(report);});document.body.append(d);}return d;};
+ const closeUpdate=()=>{const d=$('#update-dialog');if(d?.open)d.close();};
+ // Closing a result dialog (not ready/downloading) also resets the main-side phase to idle.
+ const dismissUpdate=()=>{const x=$('#update-dialog')?.querySelector('.dialog-head [data-feature]');return x?action(x.dataset.feature,'',x):undefined;};
+ function showUpdate(s){
+  const head=(title,close='update-later')=>`<div class="dialog-head"><h2>${esc(title)}</h2><button class="icon" data-feature="${close}" aria-label="Schließen">${icon('close')}</button></div>`;
+  let html;
+  if(s.phase==='available')html=head(`Pi Desk ${s.version} ist verfügbar`)+`<p class="menu-note">Du hast ${esc(s.current)}.</p><div class="update-notes">${safeMarkdown(s.notes)}</div><div class="form-actions">${button('update-skip','Diese Version überspringen')}<span class="update-spacer"></span>${button('update-later','Später')}<button type="button" class="primary" data-feature="update-download">Jetzt aktualisieren</button></div>`;
+  else if(s.phase==='downloading')html=head('Update wird geladen','update-close-ready')+`<progress max="100" value="${Number(s.percent)||0}"></progress><p class="menu-note">${Number(s.percent)||0} %</p>`;
+  else if(s.phase==='ready')html=head(`Pi Desk ${s.version} ist bereit`,'update-close-ready')+`<p>Ein Vorgang läuft noch. Das Update wird beim nächsten Beenden installiert.</p><div class="form-actions">${button('update-close-ready','Beim Beenden installieren')}<button type="button" class="primary" data-feature="update-install">Jetzt neu starten</button></div>`;
+  else if(s.phase==='upToDate')html=head('Keine Updates')+`<p>Pi Desk ${esc(s.current)} ist aktuell.</p><div class="form-actions"><span class="update-spacer"></span><button type="button" class="primary" data-feature="update-close">OK</button></div>`;
+  else if(s.phase==='error')html=head('Update nicht möglich')+`<p class="error-line">${esc(s.error)}</p><div class="form-actions">${button('update-close','Schließen')}<button type="button" class="primary" data-feature="update-check">Erneut versuchen</button></div>`;
+  else return closeUpdate();
+  const d=updateDialog();d.innerHTML=html;if(!d.open)d.showModal();
+ }
  async function action(name,id,el){
   $('#popover').hidePopover();
   if(name==='settings-page')return settingsPage(id);
+  if(name==='update-check')return window.piDesktop.updates.check();
+  if(name==='update-download')return window.piDesktop.updates.download();
+  if(name==='update-install')return window.piDesktop.updates.install();
+  if(name==='update-skip'){closeUpdate();return window.piDesktop.updates.skip();}
+  if(name==='update-later'||name==='update-close'){closeUpdate();return window.piDesktop.updates.later();}
+  if(name==='update-close-ready')return closeUpdate();
   if(name==='login')return connect();
   if(name==='connection-new'){savedSettings=await api('settings');return editConnection();}
   if(name==='connection-remove'){if(await yes('Diese Verbindung entfernen? Der gespeicherte Schlüssel wird ebenfalls entfernt.'))await api('settings/connection-remove',{id});return settingsPage();}
@@ -168,7 +194,7 @@
   if(name==='reveal'){const p=needProject();await window.piDesktop?.reveal(selectedFile?choosePath(p.path,selectedFile):p.path);return;}
   if(name==='pet'){await showRuntime();return;}
  }
- perform=async e=>{const b=e.target.closest('button,a');if(b?.dataset.feature)return action(b.dataset.feature,b.dataset.id||'',b);if(b?.dataset.action==='more'&&task())return more(b);return oldPerform(e);};
+ perform=async e=>{const b=e.target.closest('button,a');if(b?.dataset.feature)return action(b.dataset.feature,b.dataset.id||'',b);if(b?.dataset.action==='updates'){await settingsPage('updates');return window.piDesktop?.updates?.check();}if(b?.dataset.action==='more'&&task())return more(b);return oldPerform(e);};
  document.addEventListener('submit',e=>{
   if(e.target.id==='composer'){e.preventDefault();e.stopImmediatePropagation();sendCurrent().catch(showError);return;}
   const f=e.target;if(!f.dataset.featureForm)return;e.preventDefault();e.stopImmediatePropagation();
@@ -203,5 +229,7 @@
  document.body.insertAdjacentHTML('beforeend',`<button id="pi-pet" class="pi-pet" data-feature="pet" aria-label="Pi-Begleiter: Agentenstatus öffnen" hidden><svg viewBox="0 0 64 64" aria-hidden="true"><path d="M12 28V10l15 10h10l15-10v18q7 28-20 28T12 28"/><path d="M22 34h1m18 0h1M28 43q4 5 8 0M6 37l14 3m24 0 14-3"/></svg></button>`);
  setInterval(()=>{const el=$('.live-status');if(el&&session.busy&&elapsedStart)el.lastChild.textContent=` ${session.pending?.length?'Wartet auf Genehmigung':'OMP arbeitet'} · ${Math.floor((Date.now()-elapsedStart)/1000)} s`;},1000);
  api('desktop-settings').then(s=>{prefs=s;applyAppearance();sync();}).catch(showError);
- window.piFeatures={settingsPage,showRuntime,sessionTools,sendCurrent,action,safeMarkdown,approvalTool,addImage,getImages:()=>images};
+ window.piDesktop?.updates?.onStatus(s=>{showUpdate(s);if($('.settings-nav [data-id="updates"][aria-current="page"]')&&['upToDate','error','idle'].includes(s.phase))settingsPage('updates').catch(report);});
+ document.addEventListener('change',e=>{if(e.target.matches?.('[data-update-auto]'))window.piDesktop.updates.setAuto(e.target.checked).catch(report);});
+ window.piFeatures={settingsPage,showRuntime,sessionTools,sendCurrent,action,safeMarkdown,approvalTool,addImage,showUpdate,getImages:()=>images};
 })();

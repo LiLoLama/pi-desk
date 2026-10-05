@@ -44,3 +44,19 @@ test('context length is chosen per model, persisted and locked while loaded',asy
  reloaded.child={exitCode:1};assert.equal((await reloaded.setContext(m.id,32768)).models[0].context.size,32768);reloaded.child=null;reloaded.active=null;
  }finally{await rm(root,{recursive:true,force:true});}
 });
+test('download folder stays connected behind a symlinked data directory',async()=>{
+ const {realpath}=await import('node:fs/promises'),path=(await import('node:path')).default,os=(await import('node:os')).default;
+ const root=await realpath(await mkdtemp(path.join(os.tmpdir(),'pi-canonical-unit-')));try{
+ const real=path.join(root,'real'),link=path.join(root,'link');await mkdir(path.join(real,'local-models'),{recursive:true});await mkdir(path.join(real,'extra'));await symlink(real,link,'junction');
+ const downloads=path.join(real,'local-models','models'),raw=path.join(link,'local-models','models');
+ // Profile of the previous version: raw download path, duplicate entry and a stored context length.
+ await writeFile(path.join(real,'local-models.json'),JSON.stringify({folders:[raw,raw,path.join(link,'extra')],contexts:{abc:16384}}));
+ const c=new LocalModels(link);await c.init();assert.deepEqual(c.config.folders,[downloads,path.join(real,'extra')]);
+ const saved=JSON.parse(await readFile(path.join(real,'local-models.json'),'utf8'));assert.deepEqual(saved.folders,c.config.folders);assert.deepEqual(saved.contexts,{abc:16384});
+ assert.equal(await c.downloadTarget(raw),downloads);assert.equal(await c.downloadTarget(downloads),downloads);await assert.rejects(c.downloadTarget(real),/verbundenen Modellordner/);
+ await assert.rejects(c.folder(downloads,true),/Downloadordner/);
+ const freshReal=path.join(root,'fresh'),freshLink=path.join(root,'fresh-link');await mkdir(freshReal);await symlink(freshReal,freshLink,'junction');
+ const fresh=new LocalModels(freshLink);await fresh.init();assert.deepEqual(fresh.config.folders,[path.join(freshReal,'local-models','models')]);assert.equal(await fresh.downloadTarget(path.join(freshLink,'local-models','models')),fresh.config.folders[0]);
+ await c.close();await fresh.close();
+ }finally{await rm(root,{recursive:true,force:true});}
+});

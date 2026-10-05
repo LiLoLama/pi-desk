@@ -19,6 +19,7 @@ check(
 check(UpdateLogic.notes(items, newerThan: "0.4.0").isEmpty, "nothing newer")
 check(UpdateLogic.canReplace(bundlePath: "/Applications/Pi Desk.app", parentWritable: true), "Applications")
 check(!UpdateLogic.canReplace(bundlePath: "/Volumes/Pi Desk/Pi Desk.app", parentWritable: false), "read-only disk image")
+check(UpdateLogic.canReplace(bundlePath: "/Volumes/Daten/Programme/Pi Desk.app", parentWritable: true), "writable external volume")
 check(
   !UpdateLogic.canReplace(bundlePath: "/private/var/folders/x/AppTranslocation/ABC/d/Pi Desk.app", parentWritable: true),
   "translocated")

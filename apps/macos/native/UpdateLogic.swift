@@ -22,7 +22,8 @@ enum UpdateLogic {
       .joined(separator: "\n\n")
   }
 
-  /// Sparkle cannot replace an app running from a disk image, a translocated copy or a read-only folder.
+  /// Sparkle needs a writable parent folder (a mounted disk image is read-only) and no App Translocation copy.
+  /// Apps on writable external volumes stay updatable.
   static func canReplace(bundlePath: String, parentWritable: Bool) -> Bool {
     parentWritable && !bundlePath.contains("/AppTranslocation/")
   }

@@ -1,13 +1,17 @@
 #!/usr/bin/env python3
 """Build a self-contained, locally signed arm64 macOS .app. Install locked build dependencies with npm ci --ignore-scripts first."""
 from pathlib import Path
-import shutil, subprocess, plistlib, hashlib, os
+import shutil, subprocess, plistlib, hashlib, os, json
 root=Path(__file__).resolve().parents[1]
 app=root/'dist'/'.stage'/'Pi Desk.app'
 final=root/'dist'/'Pi Desk.app'
 resources=app/'Contents'/'Resources'
 macos=app/'Contents'/'MacOS'
 for folder in [resources,macos]:folder.mkdir(parents=True,exist_ok=True)
+version=json.loads((root/'package.json').read_text())['version']
+major,minor,patch=(int(part) for part in version.split('.'))
+if not (0<=minor<100 and 0<=patch<100): raise SystemExit('Version X.Y.Z mit Y, Z < 100 erforderlich (Build-Nummer).')
+build_number=str(major*10000+minor*100+patch)
 
 def is_mach_o(path):
   try:
@@ -68,9 +72,9 @@ shutil.copytree(root/'licenses',resources/'licenses',dirs_exist_ok=True)
 iconset=root/'dist'/'AppIcon.iconset';iconset.mkdir(exist_ok=True)
 subprocess.run(['swift','-module-cache-path','/private/tmp/pi-desk-swift-cache',str(root/'native'/'Icon.swift'),str(iconset)],check=True)
 subprocess.run(['iconutil','-c','icns',str(iconset),'-o',str(resources/'AppIcon.icns')],check=True)
-info={'CFBundleName':'Pi Desk','CFBundleDisplayName':'Pi Desk','CFBundleExecutable':'PiDesk','CFBundleIdentifier':'studio.pidesk.mac','CFBundleVersion':'2','CFBundleShortVersionString':'0.2.0','CFBundlePackageType':'APPL','CFBundleIconFile':'AppIcon','LSMinimumSystemVersion':'14.0','NSHighResolutionCapable':True,'NSPrincipalClass':'NSApplication','NSLocalNetworkUsageDescription':'Pi Desk verbindet seine Oberfläche mit der lokalen OMP-Engine auf diesem Mac.','NSAppTransportSecurity':{'NSAllowsLocalNetworking':True}}
+info={'CFBundleName':'Pi Desk','CFBundleDisplayName':'Pi Desk','CFBundleExecutable':'PiDesk','CFBundleIdentifier':'studio.pidesk.mac','CFBundleVersion':build_number,'CFBundleShortVersionString':version,'CFBundlePackageType':'APPL','CFBundleIconFile':'AppIcon','LSMinimumSystemVersion':'14.0','NSHighResolutionCapable':True,'NSPrincipalClass':'NSApplication','NSLocalNetworkUsageDescription':'Pi Desk verbindet seine Oberfläche mit der lokalen OMP-Engine auf diesem Mac.','NSAppTransportSecurity':{'NSAllowsLocalNetworking':True}}
 with (app/'Contents'/'Info.plist').open('wb') as f:plistlib.dump(info,f)
-(resources/'BUILD.txt').write_text('Pi Desk 0.2.0\nSwiftUI / AppKit\nmacOS 14+, Apple Silicon\nOMP 18.4.10\nLocal ad-hoc signature, not notarized.\n')
+(resources/'BUILD.txt').write_text(f'Pi Desk {version} ({build_number})\nSwiftUI / AppKit\nmacOS 14+, Apple Silicon\nOMP 18.4.10\nLocal ad-hoc signature, not notarized.\n')
 # Sign app shell and bundled Node; leave the official OMP binary's signature untouched.
 subprocess.run(['codesign','--force','--sign','-',str(resources/'node')],check=True)
 subprocess.run(['codesign','--force','--sign','-',str(app)],check=True)

@@ -4,9 +4,9 @@ Lokale grafische Oberfläche für [Oh My Pi](https://github.com/can1357/oh-my-pi
 
 ## Native macOS-App
 
-Die fertige Anwendung liegt unter **`dist/Pi Desk.app`**. Zum Verschicken an einen anderen Apple-Silicon-Mac: **`dist/Pi-Desk-0.2.0-apple-silicon.dmg`**. Per Doppelklick starten; optional nach `Programme` verschieben. Node und OMP sind enthalten, ein Terminal oder Browserfenster wird für die Bedienung nicht benötigt. Die Oberfläche besteht aus **SwiftUI und AppKit**, ohne WebView/Electron.
+Die fertige Anwendung liegt unter **`dist/Pi Desk.app`**. Zum Verschicken an einen anderen Apple-Silicon-Mac: **`dist/Pi-Desk-0.3.0-apple-silicon.dmg`**. Per Doppelklick starten; optional nach `Programme` verschieben. Node und OMP sind enthalten, ein Terminal oder Browserfenster wird für die Bedienung nicht benötigt. Die Oberfläche besteht aus **SwiftUI und AppKit**, ohne WebView/Electron.
 
-Apple Silicon, Build-Ziel macOS 14 oder neuer; auf dem aktuellen Mac getestet. Die App ist lokal ad-hoc signiert. Ein Developer-ID-signiertes und notarisiertes Installationspaket für die Weitergabe ist noch nicht eingerichtet.
+Apple Silicon, Build-Ziel macOS 14 oder neuer; auf dem aktuellen Mac getestet. Ab 0.3.0 werden Releases mit Developer ID signiert und von Apple notarisiert. Die derzeit veröffentlichte 0.2.0 ist noch ad-hoc signiert und nicht notarisiert. Lokale Builds ohne `PI_DESK_SIGN_ID` bleiben ad-hoc signiert.
 
 1. **Anbieter verbinden**: bestehendes Anbieter-Abo über OMP anmelden. Die externe Autorisierungsseite öffnet sich im Standardbrowser; Codes/Weiterleitungsadressen werden im nativen Dialog eingegeben.
 2. **⌘O** öffnet die native macOS-Ordnerauswahl.
@@ -19,10 +19,11 @@ Die App startet und beendet ihren lokalen Hintergrundprozess selbst. Er verwende
 
 ```sh
 npm ci --ignore-scripts
+npm run sparkle
 python3 native/build.py
 ```
 
-Erfordert Xcode/Swift, Node.js 22+ und die gepinnte OMP-Runtime (`node install-runtime.mjs`). `native/PiDesk.swift` enthält Oberfläche, API-Adapter und App-Lifecycle. Das Skript erstellt das Icon, bündelt die Laufzeiten und prüft die lokale Codesignatur. Es kopiert nur eine echte Node-Mach-O-Binary, keine Wrapper-Skripte (Goose/Hermit). Optional `PI_DESK_NODE` auf den gewünschten `node`-Pfad setzen. Der YAML-Parser wird über den Lockfile installiert und mit der App gebündelt. Für Benutzer der fertigen App ist keine Installation im Terminal nötig.
+`npm run sparkle` lädt Sparkle 2.10.0 SHA-256-geprüft nach `vendor/`. Erfordert Xcode/Swift, Node.js 22+ und die gepinnte OMP-Runtime (`node install-runtime.mjs`). `native/PiDesk.swift` enthält Oberfläche, API-Adapter und App-Lifecycle. Das Skript erstellt das Icon, bündelt die Laufzeiten und prüft die Codesignatur. Mit gesetztem `PI_DESK_SIGN_ID` (Developer-ID-Name) signiert es mit Hardened Runtime; ohne entsteht ein ad-hoc signierter Entwicklungs-Build (`PIDeskDevBuild`), der den Update-Feed über `PI_DESK_UPDATE_FEED` überschreiben lässt. `PI_DESK_TEST_FEED_BUILD=1` markiert auch einen signierten Build als Entwicklungs-Build, damit er `PI_DESK_UPDATE_FEED` akzeptiert. Es ist nur für lokale Tests gedacht; das Release-Skript weist solche Builds ab. Es kopiert nur eine echte Node-Mach-O-Binary, keine Wrapper-Skripte (Goose/Hermit). Optional `PI_DESK_NODE` auf den gewünschten `node`-Pfad setzen. Der YAML-Parser wird über den Lockfile installiert und mit der App gebündelt. Für Benutzer der fertigen App ist keine Installation im Terminal nötig.
 
 ### Browser-Entwicklungsansicht
 
@@ -48,6 +49,24 @@ Die App startet keine kostenpflichtige Inferenz automatisch. Der vollständige L
 - Werkzeugergebnisse füllen den Chat nicht einzeln: während der Arbeit zeigt eine standardmäßig geöffnete Statuszeile Laufzeit, aktuelle Modellgedanken und bereits eingegangene Werkzeugschritte mit verständlichen deutschen Namen und – sofern von OMP geliefert – ihrem Zweck. Danach werden aufeinanderfolgende Werkzeugergebnisse zu einem kompakten, aufklappbaren Arbeitsblock mit Details und Ausgabe zusammengefasst.
 - Echte Genehmigungsdialoge. Standard **Nachfragen**: Schreiben und Shell-Befehle bestätigen. **Dateien erlauben**: Schreiben erlauben, Shell bestätigen. **Vollzugriff**: beides automatisch. Zusätzlich kann ein angefragtes Werkzeug einmalig, für den aktuellen Chat oder global erlaubt werden. Dauerregeln gelten nur für das benannte Werkzeug, werden lokal gespeichert und unter **Einstellungen → Agent → Automatische Genehmigungen** zurückgesetzt. Anbieter-Sicherheitsprüfungen und generische Bestätigungen werden nie automatisch freigegeben. Moduswechsel startet den Agenten im Leerlauf mit derselben Sitzung neu.
 - Verbindungsabbrüche sichtbar; erneutes Laden rekonstruiert Chat und offene Genehmigungen, solange der Serverprozess lebt. Nach Serverneustart bleibt die gespeicherte Unterhaltung erhalten; laufende Generierungen werden nicht automatisch wiederholt.
+
+## Updates
+
+Pi Desk sucht 10 Sekunden nach dem Start und danach alle 6 Stunden nach einer neuen Version (Sparkle 2.10.0). Gibt es eine, erscheint der Changelog mit **Jetzt aktualisieren**, **Später** und **Diese Version überspringen**. Während ein Agent arbeitet, eine Anmeldung läuft oder Hintergrundaufgaben aktiv sind, wird nur geladen und beim nächsten Beenden installiert; **Jetzt neu starten** fragt dann wie das Beenden nach. **Einstellungen → Updates** schaltet die automatische Suche ab oder prüft sofort; ebenso **Pi Desk → Nach Updates suchen …**. Updates benötigen eine App im Programme-Ordner (oder einem anderen beschreibbaren Ordner), nicht im Disk-Image oder in App Translocation; die App weist darauf hin.
+
+Quelle ist `updates/macos/appcast.xml` in diesem Repository; das DMG selbst ist ein Anhang am GitHub-Release. Sparkle prüft jede Datei mit dem eingebauten EdDSA-Schlüssel (`native/sparkle-public-key.txt`), bevor es sie installiert. Pi Desk verwendet dafür eine eigene SwiftUI-Oberfläche statt der Standarddialoge von Sparkle.
+
+## Release veröffentlichen
+
+Einmalig: Sparkle-Schlüssel (`vendor/sparkle/bin/generate_keys`, privat im Schlüsselbund und Passwortmanager) und Notarisierungsprofil (`xcrun notarytool store-credentials pi-desk-notary …`).
+
+1. Version in `package.json` erhöhen, Abschnitt in `CHANGELOG.md` schreiben.
+2. `PI_DESK_SIGN_ID="Developer ID Application: …" PI_DESK_NOTARY_PROFILE=pi-desk-notary npm run release:draft`: Build, Notarisierung, DMG, EdDSA-Signatur, Entwurfs-Release `macos-vX.Y.Z`, lokale Änderung an `updates/macos/appcast.xml`. Das Skript prüft vorab Branch `main`, sauberen Arbeitsbaum, `HEAD == origin/main` und ob der Sparkle-Schlüssel im Schlüsselbund zu `native/sparkle-public-key.txt` passt, und weist Test-Feed-Builds ab. Das DMG enthält die Drittanbieter-Lizenzen im Ordner `Lizenzen`.
+3. Entwurf herunterladen und testen.
+4. `npm run release:publish` prüft zuerst Entwurf und DMG-Größe gegen den Feed und fragt erst danach („ja“). Dann veröffentlicht es das Release, committet nur den Feed und pusht `main`. Beide Release-Befehle brauchen eine angemeldete `gh`-CLI; das Release bleibt als Vorabversion markiert (`--prerelease`). Scheitert der Push, ist das Release bereits öffentlich: dann `updates/macos/appcast.xml` manuell committen und pushen.
+5. Nach dem Ausrollen: Download-Links in README.md und im App-README auf die neue Version umstellen (eigener Commit).
+
+Zurückrollen: Feed-Commit zurücksetzen und den Revert pushen. `raw.githubusercontent.com` cached etwa 5 Minuten, bis dahin liefert der Feed noch den alten Stand. Das GitHub-Release bleibt öffentlich, bis es manuell zurückgezogen wird. Bereits aktualisierte Installationen bleiben auf der Version.
 
 ## Grenzen dieser ersten Version
 
@@ -144,3 +163,5 @@ node test/local-engine-smoke.mjs /absoluter/pfad/zu/einem/MLX-Modell
 ## GitHub-Download
 
 [macOS-Vorabversion 0.2.0](https://github.com/LiLoLama/pi-desk/releases/tag/macos-v0.2.0): DMG für Apple Silicon mit OMP 18.4.10. Ad-hoc signiert, nicht notarisiert. Drittanbieter-Lizenzen liegen im App-Paket und auf dem DMG.
+
+Die nächste Version 0.3.0 folgt mit automatischen Updates; sie wird Developer-ID-signiert und notarisiert und muss einmalig manuell installiert werden. Danach aktualisiert sich Pi Desk selbst. Ihre Drittanbieter-Lizenzen (OMP, YAML und Sparkle, siehe `licenses/SPARKLE-LICENSE.txt`) liegen im App-Paket und im DMG-Ordner `Lizenzen`.

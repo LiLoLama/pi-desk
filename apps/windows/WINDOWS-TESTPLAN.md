@@ -1,10 +1,10 @@
-# Windows-Testliste · Pi Desk 0.3.1 · OMP 18.4.10
+# Windows-Testliste · Pi Desk 0.4.0 · OMP 18.4.10
 
 Bitte mit einem kleinen Testprojekt beginnen. Bei einem Fehler notieren: Windows-Version, CPU/GPU, Modell/Anbieter, konkrete Schritte, erwartetes/tatsächliches Ergebnis und sichtbare Fehlermeldung. Keine API-Schlüssel oder vertraulichen Chats in Fehlerberichte kopieren.
 
 ## 1. Start und Grundlagen
 
-- [ ] ZIP vollständig entpacken, `Pi Desk.exe` starten: Fenster erscheint, keine separate Node-/OMP-Installation erforderlich.
+- [ ] `Pi-Desk-0.4.0-Windows-x64-Setup.exe` installieren (SmartScreen-Hinweis ggf.), Pi Desk starten: Fenster erscheint, keine separate Node-/OMP-Installation erforderlich.
 - [ ] Zweiter Start: bestehendes Fenster wird aktiviert, keine konkurrierenden Agentenprofile.
 - [ ] Projektordner mit Leerzeichen/Umlauten auswählen; neues Projekt und neue Aufgabe anlegen.
 - [ ] Anbieter-Login im Standardbrowser vollständig abschließen, ggf. Code eingeben; Modell wählen und Antwort erhalten.
@@ -69,6 +69,19 @@ Bitte mit einem kleinen Testprojekt beginnen. Bei einem Fehler notieren: Windows
 
 ## Bekannte Grenzen
 
-Kein Setup-Installer, keine Signatur/Autoaktualisierung, keine native ARM64-Ausgabe, keine MLX-Engine. Keine eingebettete interaktive Terminal-/Web-/PDF-Ansicht. Todos/Subagenten und Pi-Begleiter sind gegenüber der nativen Mac-App vereinfacht. Für bestimmte Plugins, Browser-/Computerwerkzeuge oder MCP-Server sind externe Voraussetzungen nötig. Ein sichtbarer Schalter beweist nicht, dass diese auf jedem PC installiert sind.
+Keine Signatur (SmartScreen kann warnen), keine Differenzupdates, keine native ARM64-Ausgabe, keine MLX-Engine. Keine eingebettete interaktive Terminal-/Web-/PDF-Ansicht. Todos/Subagenten und Pi-Begleiter sind gegenüber der nativen Mac-App vereinfacht. Für bestimmte Plugins, Browser-/Computerwerkzeuge oder MCP-Server sind externe Voraussetzungen nötig. Ein sichtbarer Schalter beweist nicht, dass diese auf jedem PC installiert sind.
 
 Die bisherigen automatisierten Prüfungen liefen unter macOS. Diese Liste dient insbesondere der noch offenen Windows-, Login- und Inferenzprüfung.
+
+## Updates (ab 0.4.0)
+
+1. Beim Setup die Seite zur Installationsart beobachten (nur für mich oder alle Benutzer) und „Nur für mich“ wählen: keine UAC-Abfrage.
+2. Bisherige ZIP-Version 0.3.0 mit einem Chat starten, beenden. Setup 0.4.0 installieren, starten: Chat und Anmeldung sind noch da.
+3. Einstellungen → Updates: Version 0.4.0, „Automatisch nach Updates suchen“ an. „Jetzt nach Updates suchen“ → „Pi Desk 0.4.0 ist aktuell“.
+4. Sobald 0.4.1 ausgerollt ist: Pi Desk 0.4.0 starten. Nach ca. 10 s erscheint der Dialog mit dem Changelog von 0.4.1.
+5. „Später“: Dialog schließt. Er erscheint erst nach erneutem App-Start wieder.
+6. „Jetzt aktualisieren“ ohne laufenden Agenten: Fortschritt, Neustart ohne UAC-Abfrage, Einstellungen → Updates zeigt 0.4.1.
+7. Mit laufendem Agenten (oder offener Anmeldung) aktualisieren: Hinweis „Das Update ist geladen und wird beim nächsten Beenden installiert.“ „Jetzt neu starten“ fragt wie beim Beenden nach. „Beim Beenden installieren“ schließt den Hinweis; „Datei → Nach Updates suchen …“ zeigt ihn wieder.
+8. „Diese Version überspringen“: Kein automatischer Dialog mehr für diese Version, manuelle Suche zeigt sie weiterhin.
+9. Netzwerk trennen, „Jetzt nach Updates suchen“: verständliche Meldung, App bleibt benutzbar.
+10. `%LOCALAPPDATA%\Pi Desk\desktop\logs\updates.log` enthält die Prüfungen.

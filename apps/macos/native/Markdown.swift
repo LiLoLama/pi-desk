@@ -739,6 +739,10 @@ private struct InlineMarkdown: View {
       fontSize: fontSize, hug: hug, onOpenFile: onOpenFile, onRevealFile: onRevealFile,
       onOpenURL: onOpenURL
     )
+    // The text view reports no baseline; without zero insets its first baseline sits at the ascender.
+    .alignmentGuide(.firstTextBaseline) { _ in
+      systemFont(size: fontSize, weight: weight, monospaced: monospaced).ascender
+    }
     .frame(maxWidth: hug ? nil : .infinity, alignment: .leading)
   }
 }

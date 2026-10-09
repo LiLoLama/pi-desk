@@ -1,9 +1,9 @@
-import test from 'node:test';import assert from 'node:assert/strict';import {mkdtemp,mkdir,writeFile,readFile,rm,symlink} from 'node:fs/promises';import {LocalModels,scanFolders,suitability,ggufMetadata,ggufProfile,kvProfile,configProfile,contextOptions,defaultContext} from '../local-models.mjs';
+import test from 'node:test';import assert from 'node:assert/strict';import {mkdtemp,mkdir,writeFile,readFile,rm,symlink,realpath} from 'node:fs/promises';import os from 'node:os';import path from 'node:path';import {LocalModels,scanFolders,suitability,ggufMetadata,ggufProfile,kvProfile,configProfile,contextOptions,defaultContext} from '../local-models.mjs';
 test('library scans deduplicated roots, MLX, GGUF shards and preserves files',async()=>{
- const root=await mkdtemp('/private/tmp/pi-library-unit-');try{
- const models=root+'/models';await mkdir(models);await writeFile(models+'/tiny.gguf','GGUF');await writeFile(models+'/mmproj.gguf','projection');
+ const root=await realpath(await mkdtemp(path.join(os.tmpdir(),'pi-library-unit-')));try{
+ const models=path.join(root,'models');await mkdir(models);await writeFile(models+'/tiny.gguf','GGUF');await writeFile(models+'/mmproj.gguf','projection');
  await mkdir(models+'/mlx');for(const [name,body] of Object.entries({'config.json':'{"model_type":"qwen"}','tokenizer.json':'{}','model.safetensors':'weights'}))await writeFile(models+'/mlx/'+name,body);
- await symlink(models,models+'/cycle');const scan=await scanFolders([models,models+'/mlx']);assert.equal(scan.models.length,2);assert.deepEqual(scan.errors,[]);
+ await symlink(models,models+'/cycle',process.platform==='win32'?'junction':'dir');const scan=await scanFolders([models,models+'/mlx']);assert.equal(scan.models.length,2);assert.deepEqual(scan.errors,[]);
  const snapshot=models+'/models--owner--model/snapshots/'+'a'.repeat(40);await mkdir(snapshot,{recursive:true});for(const [name,body] of Object.entries({'config.json':'{}','tokenizer.json':'{}','model.safetensors':'weights'}))await writeFile(snapshot+'/'+name,body);
  assert.ok((await scanFolders([models])).models.some(m=>m.name==='owner/model'));
  await rm(models+'/models--owner--model',{recursive:true});
@@ -17,9 +17,9 @@ const ggufFile=entries=>{const u32=n=>{const b=Buffer.alloc(4);b.writeUInt32LE(n
  return Buffer.concat([Buffer.from('GGUF'),u32(3),u64(0),u64(entries.length),...entries.map(([k,type,v])=>Buffer.concat([str(k),u32(type==='strings'||type==='u32s'?9:type),value([type,v])]))]);};
 const llama=(extra=[])=>ggufFile([['general.architecture',8,'llama'],['tokenizer.ggml.tokens','strings',Array.from({length:5000},(_,i)=>'t'.repeat(300)+i)],['tokenizer.ggml.token_type','u32s',Array(10000).fill(1)],['llama.context_length',4,131072],['llama.block_count',4,32],['llama.attention.head_count',4,32],['llama.attention.head_count_kv',4,8],['llama.embedding_length',4,4096],...extra]);
 test('GGUF header yields trained context and KV size without reading weights',async()=>{
- const root=await mkdtemp('/private/tmp/pi-gguf-meta-');try{await writeFile(root+'/m.gguf',llama());const meta=await ggufMetadata(root+'/m.gguf');
+ const root=await realpath(await mkdtemp(path.join(os.tmpdir(),'pi-gguf-meta-')));try{await writeFile(path.join(root,'m.gguf'),llama());const meta=await ggufMetadata(path.join(root,'m.gguf'));
  assert.equal(meta['llama.embedding_length'],4096);assert.equal(meta['tokenizer.ggml.tokens'],undefined);assert.deepEqual(ggufProfile(meta),{trained:131072,kvBytesPerToken:131072});
- await writeFile(root+'/bad.gguf','GGUF');await assert.rejects(ggufMetadata(root+'/bad.gguf'));
+ await writeFile(path.join(root,'bad.gguf'),'GGUF');await assert.rejects(ggufMetadata(path.join(root,'bad.gguf')));
  }finally{await rm(root,{recursive:true,force:true});}
  assert.deepEqual(kvProfile({layers:4,heads:32,kvHeads:[8,0,8,0],keyLength:128}),{trained:null,kvBytesPerToken:8192});
  assert.deepEqual(configProfile({text_config:{num_hidden_layers:26,num_attention_heads:32,num_key_value_heads:8,head_dim:128,max_position_embeddings:262144}}),{trained:262144,kvBytesPerToken:106496});
@@ -34,11 +34,11 @@ test('context options follow the model limit and this device memory',()=>{
  assert.deepEqual(contextOptions({bytes:GiB}).map(o=>o.fit),['unknown','unknown','unknown','unknown']);
 });
 test('context length is chosen per model, persisted and locked while loaded',async()=>{
- const root=await mkdtemp('/private/tmp/pi-context-unit-');try{
- const c=new LocalModels(root);c.memory=16*1024**3;await c.init();const folder=c.config.folders[0];await writeFile(folder+'/m.gguf',llama());await c.scan();
+ const root=await realpath(await mkdtemp(path.join(os.tmpdir(),'pi-context-unit-')));try{
+ const c=new LocalModels(root);c.memory=16*1024**3;await c.init();const folder=c.config.folders[0];await writeFile(path.join(folder,'m.gguf'),llama());await c.scan();
  const [m]=(await c.status()).models;assert.equal(m.context.size,32768);assert.equal(m.context.max,131072);
  await assert.rejects(c.setContext(m.id,8192),/Kontextlänge/);await assert.rejects(c.setContext('missing',32768),/nicht gefunden/);await assert.rejects(c.setContext(m.id,131072),/Arbeitsspeicher/);
- assert.equal((await c.setContext(m.id,16384)).models[0].context.size,16384);assert.equal(JSON.parse(await readFile(root+'/local-models.json','utf8')).contexts[m.id],16384);
+ assert.equal((await c.setContext(m.id,16384)).models[0].context.size,16384);assert.equal(JSON.parse(await readFile(path.join(root,'local-models.json'),'utf8')).contexts[m.id],16384);
  const reloaded=new LocalModels(root);reloaded.memory=16*1024**3;await reloaded.init();assert.equal((await reloaded.status()).models[0].context.size,16384);
  reloaded.active={id:m.id};reloaded.child={exitCode:null};await assert.rejects(reloaded.setContext(m.id,32768),/entladen/);
  reloaded.child={exitCode:1};assert.equal((await reloaded.setContext(m.id,32768)).models[0].context.size,32768);reloaded.child=null;reloaded.active=null;

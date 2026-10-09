@@ -1,6 +1,6 @@
 {
   "name": "pi-desk-windows",
-  "version": "0.3.1",
+  "version": "0.4.0",
   "description": "Pi Desk für Windows – lokale Desktop-Oberfläche für Oh My Pi",
   "private": true,
   "type": "module",
@@ -10,11 +10,12 @@
     "start": "electron .",
     "dev:server": "node server.mjs",
     "runtime:win": "node scripts/install-runtime.mjs",
-    "test": "node --test test/core.test.mjs test/settings.test.mjs test/capabilities.test.mjs test/local-models.test.mjs test/windows.test.mjs test/parity.test.mjs test/rpc-contract.test.mjs",
+    "test": "node --test test/core.test.mjs test/settings.test.mjs test/capabilities.test.mjs test/local-models.test.mjs test/windows.test.mjs test/parity.test.mjs test/rpc-contract.test.mjs test/changelog.test.mjs test/updates.test.mjs test/release.test.mjs",
     "test:host": "node test/native-host.mjs",
-    "build:win": "npm run runtime:win && electron-builder --win zip --x64",
-    "build:installer": "npm run runtime:win && electron-builder --win nsis --x64",
+    "build:win": "npm run runtime:win && electron-builder --win nsis --x64 --publish never",
     "test:desktop": "electron test/desktop-smoke.cjs",
+    "release:feed": "node scripts/release-feed.mjs",
+    "release:publish": "node scripts/release-publish.mjs",
     "test:runtime": "node test/runtime-smoke.mjs",
     "test:http": "node test/http-smoke.mjs",
     "test:parity": "node test/parity-http.mjs",
@@ -25,6 +26,7 @@
   },
   "dependencies": {
     "dompurify": "3.4.16",
+    "electron-updater": "6.8.9",
     "marked": "18.0.14",
     "yaml": "2.8.2"
   },
@@ -62,13 +64,12 @@
     "win": {
       "target": [
         {
-          "target": "zip",
+          "target": "nsis",
           "arch": [
             "x64"
           ]
         }
       ],
-      "artifactName": "Pi-Desk-${version}-Windows-${arch}.${ext}",
       "signExecutable": false,
       "icon": "build/icon.png"
     },
@@ -77,8 +78,15 @@
       "perMachine": false,
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
-      "artifactName": "Pi-Desk-${version}-Windows-${arch}-Setup.${ext}"
+      "artifactName": "Pi-Desk-${version}-Windows-${arch}-Setup.${ext}",
+      "differentialPackage": false
     },
+    "publish": [
+      {
+        "provider": "generic",
+        "url": "https://raw.githubusercontent.com/LiLoLama/pi-desk/main/updates/windows/"
+      }
+    ],
     "extraFiles": [
       {
         "from": "build/START.txt",

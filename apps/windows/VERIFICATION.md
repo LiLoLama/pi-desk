@@ -1,4 +1,27 @@
-# Windows-Port 0.3.1 – Prüfstand 05.10.2026
+# Windows-Port 0.4.0 – Prüfstand 05.10.2026
+
+Der Abschnitt zu OMP 18.4.10 stammt vom Stand 0.3.0 (02.10.2026), Kontextlänge und Paketierung vom Stand 0.3.1 (05.10.2026); beides wurde für 0.4.0 nicht neu erhoben.
+
+## 0.4.0 – Updates
+
+Setup (NSIS, pro Benutzer, unsigniert, keine Differenzupdates) und automatische Updates über electron-updater 6.8.9 mit generischem Feed `updates/windows/latest.yml`. Alle folgenden Läufe fanden auf macOS statt.
+
+### Auf macOS nachgewiesen
+
+- `npm test`: 60 von 60 Tests bestanden (nach Übernahme von 0.3.1, einschließlich der vier Tests zur Kontextlänge), davon 28 in `test/updates.test.mjs` (Updater-Konfiguration, Prüfzyklus, Überspringen, Später, Download und Installation, Fehlerfälle, Dateispeicher, Installationsentscheidung bei unbekanntem Agentenzustand, erneuter Bereit-Hinweis nach manueller Suche), 7 in `test/release.test.mjs` (Feed-Erzeugung und Prüfung vor dem Veröffentlichen) und 6 in `test/changelog.test.mjs` (Parsen und Filtern der Changelog-Abschnitte). Die Unit-Tests simulieren electron-updater; sie wurden plattformneutral geschrieben, liefen bisher aber nur auf macOS.
+- `npm run test:desktop` (mit der Mac-OMP-Runtime): Electron-Smoke bestanden. Er prüft die Update-Schnittstelle `window.piDesktop.updates` (ohne Feed-URL im Renderer), die Einstellungsseite „Updates“, den Update-Dialog (verfügbar, bereit, aktuell), dass der Einstellungsdialog bei einem Statuswechsel nicht wieder aufgeht, dass der Dialog während des Ladens versteckt bleibt und bei „bereit“ erscheint, sowie das Bereinigen von HTML und Links in den Release-Notizen. Der Smoke bedient nur die Oberfläche mit simulierten Statuswerten, nicht den echten Updater. `verification/update.png` wird beim Smoke erzeugt und nicht eingecheckt (in `.gitignore`).
+- Die Release-Skripte sind nur über ihre Unit-Tests abgedeckt. Workflow und `gh`-Aufrufe wurden nicht ausgeführt.
+
+### Offen
+
+- Lauf des Workflows **Windows-Release** auf `windows-latest`: `npm test` unter Windows, NSIS-Build, Entwurfs-Release mit Setup, `latest.yml` und `SHA256SUMS-windows.txt`. Der Workflow ist erst startbar, wenn die Datei auf `main` liegt. Eine Run-URL oder ein Windows-Testergebnis liegt noch nicht vor.
+- Echter electron-updater-Lauf (Feed, Download, SHA-512, Installation); bisher nur simuliert beziehungsweise Oberfläche geprüft.
+- Echte Installation des Setups auf Windows (Installationsart „Nur für mich“ ohne Administratorrechte, Startmenü, Desktopverknüpfung, Übernahme der Daten aus der ZIP-Version).
+- Update-Lauf 0.4.0 → 0.4.1 über Feed und Release-Anhang, inklusive SHA-512-Prüfung und Neustart ohne UAC-Abfrage.
+- SmartScreen-Verhalten beim unsignierten Setup und beim automatisch geladenen Update.
+- Busy-Regel auf Windows: Mit laufendem Agenten, Anmeldung oder nicht abfragbarem Zustand nur laden und beim nächsten Beenden installieren. Die Entscheidung selbst (`installDecision`) ist per Unit-Test geprüft, der Ablauf in `main.cjs` nicht.
+- Dass `gh` den Entwurf über den Tag `windows-vX.Y.Z` findet (`release:publish`).
+- Alle Punkte aus [WINDOWS-TESTPLAN.md](WINDOWS-TESTPLAN.md) → „Updates (ab 0.4.0)“.
 
 ## Kanonischer Downloadordner lokaler Modelle · 05.10.2026
 
@@ -7,7 +30,7 @@
 - Neuer Test (Datenverzeichnis über Symlink/Junction, Altprofil mit Rohpfad, Duplikat und Kontextwert, frisches Profil): auf macOS 20/20 Node-Tests bestanden.
 - Auf Windows offen: Testlauf auf einem Windows-Rechner, insbesondere mit 8.3-Kurznamen im Profilpfad und einer Junction; echter Download in den Standardordner.
 
-## Kontextlänge lokaler Modelle · 05.10.2026
+## 0.3.1 – Kontextlänge lokaler Modelle · 05.10.2026
 
 Anlass: Rückmeldung aus der Community unter Windows. Ministral 3 3B (GGUF, CPU) scheiterte mit Fehler 400, weil die Engine fest mit 8.192 Tokens Kontext startete und der Agenten-Prompt bereits rund 9.900 Tokens hatte.
 
@@ -42,9 +65,9 @@ Alle Läufe verwendeten isolierte temporäre Profile, lokale Modellfixtures und 
 
 ## Auf Windows offen
 
-Ein tatsächlicher Windows-Lauf bleibt zwingend separat: Start der x64-EXE, native Dialoge, OAuth, Bildinferenz, CPU-/Vulkan-Modellinferenz, GPU-Treiberverträglichkeit und Prozessbereinigung sind auf einem Windows-Rechner noch nicht nachgewiesen. Details stehen in [WINDOWS-TESTPLAN.md](WINDOWS-TESTPLAN.md). Die App ist nicht signiert und besitzt keinen automatischen Updater.
+Ein tatsächlicher Windows-Lauf bleibt zwingend separat: Start der x64-EXE, native Dialoge, OAuth, Bildinferenz, CPU-/Vulkan-Modellinferenz, GPU-Treiberverträglichkeit und Prozessbereinigung sind auf einem Windows-Rechner noch nicht nachgewiesen. Details stehen in [WINDOWS-TESTPLAN.md](WINDOWS-TESTPLAN.md). Die App ist nicht signiert; der automatische Updater ist auf Windows noch nicht ausgeführt worden (siehe „0.4.0 – Updates“).
 
-## Paketierung
+## Paketierung (Stand 0.3.1, ZIP)
 
 Electron 44.4.5, electron-builder 26.15.3, OMP 18.4.10. Das Paket enthält `Pi Desk.exe`, Electron/Node, `resources/app.asar`, `resources/runtime/omp.exe`, Lizenzen, Startanleitung, README und Windows-Testliste. Keine Nutzerprofile oder Zugangsdaten wurden übernommen.
 
@@ -57,4 +80,4 @@ Electron 44.4.5, electron-builder 26.15.3, OMP 18.4.10. Das Paket enthält `Pi D
 - `app.asar` enthält Version 0.3.1, die Kontextplanung in `local-models.mjs` und die Auswahl je Modell in `public/features.js`; `START.txt`, `README-WINDOWS.md` und Testliste tragen 0.3.1
 - Vorgänger `Pi-Desk-0.3.0-Windows-x64.zip` (SHA-256 `4b783165…bb7d`) bleibt unverändert im Ordner
 
-Kein Setup.exe: `npm run build:installer` bleibt für einen echten Windows-Build vorbereitet. Windows ARM64 wurde nicht gebaut.
+Stand 0.3.0/0.3.1: Kein Setup.exe; der damalige Skriptname `build:installer` existiert nicht mehr, ab 0.4.0 erzeugt `npm run build:win` das Setup. Windows ARM64 wurde nicht gebaut.

@@ -8,7 +8,7 @@ test('Windows data lives in LocalAppData and handles spaces and Unicode',()=>{
  assert.equal(dataDirectory('win32',{},'C:\\Users\\Liam'),'C:\\Users\\Liam\\AppData\\Local\\Pi Desk');
 });
 test('Runtime selects Windows executable and explicit test runtime',()=>{
- assert.ok(runtimeBinary('/app','win32',{}).endsWith('runtime/win32-x64/omp.exe'));
+ assert.ok(runtimeBinary('/app','win32',{}).replaceAll('\\','/').endsWith('runtime/win32-x64/omp.exe'));
  assert.equal(runtimeBinary('/app','win32',{PI_DESK_OMP:'/test/omp'}),'/test/omp');
 });
 test('Only the owned origin is trusted; external schemes and credentials are blocked',()=>{

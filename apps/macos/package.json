@@ -1,1 +1,1 @@
-{"name":"pi-desk","private":true,"type":"module","scripts":{"start":"node server.mjs","test":"node --test test/*.test.mjs"},"engines":{"node":">=22"},"dependencies":{"yaml":"2.8.2"}}
+{"name":"pi-desk","version":"0.3.0","private":true,"type":"module","scripts":{"start":"node server.mjs","test":"node --test test/*.test.mjs","sparkle":"node scripts/install-sparkle.mjs","release:draft":"node scripts/release.mjs draft","release:publish":"node scripts/release.mjs publish"},"engines":{"node":">=22"},"dependencies":{"yaml":"2.8.2"}}

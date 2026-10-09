@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<rss version="2.0" xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle">
+  <channel>
+    <title>Pi Desk für macOS</title>
+    <item>
+      <title>Pi Desk 0.3.0</title>
+      <pubDate>Fri, 09 Oct 2026 12:05:40 GMT</pubDate>
+      <sparkle:version>300</sparkle:version>
+      <sparkle:shortVersionString>0.3.0</sparkle:shortVersionString>
+      <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+      <description><![CDATA[## 0.3.0 – 09.10.2026
+
+- Pi Desk sucht jetzt selbst nach Updates und zeigt vor dem Aktualisieren, was neu ist.
+- Neue Einstellungsseite „Updates“: automatische Suche ein- oder ausschalten und jederzeit manuell prüfen.
+- Die App ist mit Developer ID signiert und von Apple notariell beglaubigt. Die Gatekeeper-Warnung beim ersten Start entfällt.
+- Die Kontextlänge lokaler Modelle ist jetzt je Modell wählbar (Standard 32k) und zeigt den geschätzten Speicherbedarf. Behebt Fehler bei lokalen GGUF-Modellen, deren Kontext bisher fest auf 8k stand.
+- MCP-Server lassen sich wieder bearbeiten. Bisher öffnete „Bearbeiten“ ein leeres Formular.
+- Downloads lokaler Modelle in den Standardordner scheitern nicht mehr an Ordnern hinter symbolischen Links.
+- Wichtig: Diese Version einmalig von Hand installieren. Danach kommen Updates automatisch.]]></description>
+      <enclosure url="https://github.com/LiLoLama/pi-desk/releases/download/macos-v0.3.0/Pi-Desk-0.3.0-apple-silicon.dmg" length="156228875" type="application/octet-stream" sparkle:edSignature="x9bxQYNQ7nqdaFOk/n37rRlWpAUNLM58E4e2oeAkdMZeeT553ZF5QSKMZHi/bnaospi5kZ4NgK0QNm3qjfSQBQ=="/>
+    </item>
+  </channel>
+</rss>

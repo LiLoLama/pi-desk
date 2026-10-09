@@ -6,7 +6,7 @@ Lokale grafische Oberfläche für [Oh My Pi](https://github.com/can1357/oh-my-pi
 
 Die fertige Anwendung liegt unter **`dist/Pi Desk.app`**. Zum Verschicken an einen anderen Apple-Silicon-Mac: **`dist/Pi-Desk-0.3.0-apple-silicon.dmg`**. Per Doppelklick starten; optional nach `Programme` verschieben. Node und OMP sind enthalten, ein Terminal oder Browserfenster wird für die Bedienung nicht benötigt. Die Oberfläche besteht aus **SwiftUI und AppKit**, ohne WebView/Electron.
 
-Apple Silicon, Build-Ziel macOS 14 oder neuer; auf dem aktuellen Mac getestet. Ab 0.3.0 werden Releases mit Developer ID signiert und von Apple notarisiert. Die derzeit veröffentlichte 0.2.0 ist noch ad-hoc signiert und nicht notarisiert. Lokale Builds ohne `PI_DESK_SIGN_ID` bleiben ad-hoc signiert.
+Apple Silicon, Build-Ziel macOS 14 oder neuer; auf dem aktuellen Mac getestet. Ab 0.3.0 werden Releases mit Developer ID signiert und von Apple notarisiert. Lokale Builds ohne `PI_DESK_SIGN_ID` bleiben ad-hoc signiert.
 
 1. **Anbieter verbinden**: bestehendes Anbieter-Abo über OMP anmelden. Die externe Autorisierungsseite öffnet sich im Standardbrowser; Codes/Weiterleitungsadressen werden im nativen Dialog eingegeben.
 2. **⌘O** öffnet die native macOS-Ordnerauswahl.
@@ -162,6 +162,6 @@ node test/local-engine-smoke.mjs /absoluter/pfad/zu/einem/MLX-Modell
 
 ## GitHub-Download
 
-[macOS-Vorabversion 0.2.0](https://github.com/LiLoLama/pi-desk/releases/tag/macos-v0.2.0): DMG für Apple Silicon mit OMP 18.4.10. Ad-hoc signiert, nicht notarisiert. Drittanbieter-Lizenzen liegen im App-Paket und auf dem DMG.
+[macOS-Vorabversion 0.3.0](https://github.com/LiLoLama/pi-desk/releases/tag/macos-v0.3.0): DMG für Apple Silicon mit OMP 18.4.10. Developer-ID-signiert und notarisiert.
 
-Die nächste Version 0.3.0 folgt mit automatischen Updates; sie wird Developer-ID-signiert und notarisiert und muss einmalig manuell installiert werden. Danach aktualisiert sich Pi Desk selbst. Ihre Drittanbieter-Lizenzen (OMP, YAML und Sparkle, siehe `licenses/SPARKLE-LICENSE.txt`) liegen im App-Paket und im DMG-Ordner `Lizenzen`.
+0.3.0 bringt automatische Updates und muss einmalig manuell installiert werden, auch über eine ältere Version. Danach aktualisiert sich Pi Desk selbst. Die Drittanbieter-Lizenzen (OMP, YAML und Sparkle, siehe `licenses/SPARKLE-LICENSE.txt`) liegen im App-Paket und im DMG-Ordner `Lizenzen`.

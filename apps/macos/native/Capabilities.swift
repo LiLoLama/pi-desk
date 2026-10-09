@@ -11,8 +11,7 @@ struct CapabilitySettingsView: View {
   @State private var notice = ""
   @State private var preview = ""
   @State private var previewOpen = false
-  @State private var editorOpen = false
-  @State private var editing: Object?
+  @State private var editorRequest: MCPEditorRequest?
   @State private var removeTarget: String?
   @State private var liveNames: [String] = []
   @State private var liveChecked = false
@@ -91,8 +90,7 @@ struct CapabilitySettingsView: View {
           if skillsMode {
             addSkill()
           } else {
-            editing = nil
-            editorOpen = true
+            editorRequest = MCPEditorRequest(existing: nil)
           }
         } label: {
           Image(systemName: "plus")
@@ -165,8 +163,7 @@ struct CapabilitySettingsView: View {
                       } catch { self.error = error.localizedDescription }
                     }
                   } else {
-                    editing = row
-                    editorOpen = true
+                    editorRequest = MCPEditorRequest(existing: row)
                   }
                 }
                 if !skillsMode { Button("Verbindung testen") { test(name) } }
@@ -223,8 +220,8 @@ struct CapabilitySettingsView: View {
           }
         }.padding(24).frame(width: 620, height: 470)
       }
-      .sheet(isPresented: $editorOpen) {
-        MCPSettingsEditor(desk: desk, existing: editing) {
+      .sheet(item: $editorRequest) { request in
+        MCPSettingsEditor(desk: desk, existing: request.existing) {
           Task {
             await load()
             liveChecked = false
@@ -250,6 +247,13 @@ struct CapabilitySettingsView: View {
         )
       }
   }
+}
+
+// Trägt den zu bearbeitenden Eintrag direkt ins Sheet. Mit sheet(isPresented:) las der
+// Sheet-Inhalt einen veralteten Zustand und öffnete beim Bearbeiten ein leeres Formular.
+private struct MCPEditorRequest: Identifiable {
+  let id = UUID()
+  let existing: Object?
 }
 
 private struct MCPSettingsEditor: View {

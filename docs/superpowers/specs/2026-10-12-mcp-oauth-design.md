@@ -160,6 +160,7 @@ Reine Funktionen und eine Sitzung. Netzwerk (`fetch`), Zeit, Zufall und das Öff
 | `capabilities/mcp-login-status {id}` | `{state: waiting/done/failed/cancelled, error?}` |
 | `capabilities/mcp-login-cancel {id}` | Bricht ab. |
 | `capabilities/mcp-logout {name}` | `remove(url)`, danach Übernahme. |
+| `capabilities/mcp-convert-remote {name}` | mcp-remote-Eintrag auf HTTP umstellen (Abschnitt 5). |
 
 **Serverliste** (`servers()`)
 - Neu: `login` (`signed-in`/`expired`/`required`/`none`; `required` aus dem letzten Test, im Speicher der Engine) und `oauth` (Client-ID, Scopes, Port; `hasClientSecret` statt Geheimnis).
@@ -178,7 +179,7 @@ Reine Funktionen und eine Sitzung. Netzwerk (`fetch`), Zeit, Zufall und das Öff
 
 **Verbindungstest** (`probe`)
 - Vor dem Start der Test-OMP `snapshot()` in das Testverzeichnis, sofern `agent.db` existiert.
-- 401/403 im Ergebnis → `{ok:false, authRequired:true, message:"Anmeldung erforderlich"}` und Status `required` merken. Erfolg löscht `required`.
+- 401/403 im Ergebnis → Fehler „Anmeldung erforderlich. Mit „Anmelden“ im Browser anmelden.“ und Status `required` merken. Erfolg löscht `required`.
 
 ## 5. mcp-remote
 

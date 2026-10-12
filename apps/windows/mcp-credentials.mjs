@@ -3,6 +3,7 @@ import {DatabaseSync} from 'node:sqlite';import {existsSync} from 'node:fs';impo
 export const SCHEMA_VERSION=8;
 export const credentialKey=url=>`mcp_oauth:profile:${process.env.OMP_PROFILE||'default'}:${url}`;
 export class StorageMismatch extends Error{constructor(){super('Diese OMP-Version speichert Anmeldungen anders. Bitte Pi Desk aktualisieren.');}}
+export class MissingStore extends Error{constructor(){super('OMP hat seine Datenbank noch nicht angelegt. Bitte Pi Desk neu starten und erneut anmelden.');}}
 export class McpCredentials{
  constructor(agentDir){this.file=path.join(agentDir,'agent.db');}
  exists(){return existsSync(this.file);}
@@ -18,6 +19,7 @@ export class McpCredentials{
   catch{return 'none';}finally{db?.close();}
  }
  save(url,credential){
+  if(!this.exists())throw new MissingStore();
   const db=this.#open();
   try{this.#check(db);db.exec('BEGIN IMMEDIATE');
    try{db.prepare("UPDATE auth_credentials SET disabled_cause='replaced by newer credential', updated_at=CAST(strftime('%s','now') AS INTEGER) WHERE provider=? AND disabled_cause IS NULL").run(credentialKey(url));

@@ -228,3 +228,10 @@ test('a manual check while an update is ready shows the ready dialog again',asyn
  const quiet=sent.length;assert.equal((await updates.check(false)).phase,'ready');
  assert.equal(sent.length,quiet);assert.equal(checks(updater),1);
 });
+// main.cjs stores seenVersion in the same updates.json after createUpdates has read it.
+test('saving update settings keeps fields written by others',()=>{
+ const store=memory();const {updates}=setup(store);
+ store.data.seenVersion='0.4.0';
+ updates.setAuto(false);
+ assert.equal(store.data.seenVersion,'0.4.0');assert.equal(store.data.auto,false);
+});

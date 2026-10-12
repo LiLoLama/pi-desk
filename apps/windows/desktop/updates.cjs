@@ -18,7 +18,8 @@ const fileStore=file=>({
 function createUpdates({updater,store,current,feedURL,send,install,timers=globalThis,now=()=>new Date()}){
  const saved={skipped:'',...store.read()};
  let status={phase:'idle',current,version:'',notes:'',percent:0,error:'',auto:saved.auto!==false,lastCheck:saved.lastCheck||''},manual=false,dismissed='',requested=false;
- const persist=()=>{try{store.write({auto:status.auto,skipped:saved.skipped,lastCheck:status.lastCheck});}catch{}};
+ // Re-read: main.cjs keeps seenVersion in the same file.
+ const persist=()=>{try{store.write({...store.read(),auto:status.auto,skipped:saved.skipped,lastCheck:status.lastCheck});}catch{}};
  const set=patch=>{status={...status,...patch};try{send({...status});}catch{}return {...status};};
  const fail=()=>{
   if(status.phase==='error')return {...status};

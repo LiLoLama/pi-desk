@@ -8,13 +8,15 @@ import {createRequire} from 'node:module';
 import YAML from 'yaml';
 const {parseChangelog,section,renderNotes,compareVersions}=createRequire(import.meta.url)('../desktop/changelog.cjs');
 const REPO='LiLoLama/pi-desk';
-export function feedFromRelease(latest,{tag,version,changelog}){
+// Without a differential package electron-builder omits the size; it then comes from the release asset (sizes: name → bytes).
+export function feedFromRelease(latest,{tag,version,changelog,sizes={}}){
  const info=YAML.parse(latest);
  if(info.version!==version)throw Error(`latest.yml nennt ${info.version}, erwartet ${version}.`);
  section(changelog,version);
  const asset=name=>/^https:\/\//.test(name)?name:`https://github.com/${REPO}/releases/download/${tag}/${encodeURIComponent(name)}`;
  const recent=parseChangelog(changelog).filter(e=>compareVersions(e.version,version)<=0).sort((a,b)=>compareVersions(b.version,a.version)).slice(0,10);
- return YAML.stringify({...info,files:info.files.map(f=>({...f,url:asset(f.url)})),path:asset(info.path),releaseNotes:renderNotes(recent)});
+ const sized=f=>{const size=f.size??sizes[path.basename(f.url)];if(!size)throw Error(`Keine Größe für ${f.url} – weder in latest.yml noch im Release-Anhang.`);return {...f,size};};
+ return YAML.stringify({...info,files:info.files.map(f=>({...sized(f),url:asset(f.url)})),path:asset(info.path),releaseNotes:renderNotes(recent)});
 }
 if(process.argv[1]===fileURLToPath(import.meta.url)){
  const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..'),repo=path.resolve(root,'../..');
@@ -28,7 +30,10 @@ if(process.argv[1]===fileURLToPath(import.meta.url)){
   const result=spawnSync('gh',['release','download',tag,'--repo',REPO,'--pattern','latest.yml','--dir',tmp],{stdio:'inherit'});
   if(result.status!==0)throw Error(`latest.yml aus ${tag} nicht ladbar. Ist der Windows-Workflow fertig?`);
   await mkdir(path.dirname(feed),{recursive:true});
-  await writeFile(feed,feedFromRelease(await readFile(path.join(tmp,'latest.yml'),'utf8'),{tag,version,changelog:await readFile(path.join(root,'CHANGELOG.md'),'utf8')}));
+  const view=spawnSync('gh',['release','view',tag,'--repo',REPO,'--json','assets'],{encoding:'utf8'});
+  if(view.status!==0)throw Error(`Anhänge von ${tag} nicht lesbar.`);
+  const sizes=Object.fromEntries(JSON.parse(view.stdout).assets.map(a=>[a.name,a.size]));
+  await writeFile(feed,feedFromRelease(await readFile(path.join(tmp,'latest.yml'),'utf8'),{tag,version,changelog:await readFile(path.join(root,'CHANGELOG.md'),'utf8'),sizes}));
   console.log(`Feed lokal geschrieben: updates/windows/latest.yml (${version}).\nEntwurf testen, dann: npm run release:publish`);
  }finally{await rm(tmp,{recursive:true,force:true});}
 }

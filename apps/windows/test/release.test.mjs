@@ -24,6 +24,14 @@ test('feed refuses a mismatched build or a missing changelog section',()=>{
  assert.throws(()=>feedFromRelease(latest,{tag:'windows-v0.4.1',version:'0.4.1',changelog}),/erwartet 0\.4\.1/);
  assert.throws(()=>feedFromRelease(latest.replaceAll('0.4.0','0.4.2'),{tag:'windows-v0.4.2',version:'0.4.2',changelog}),/keinen Abschnitt/);
 });
+// Ohne Differenzpaket schreibt electron-builder keine Größe in latest.yml; sie kommt dann aus dem Release-Anhang.
+test('feed takes the installer size from the release asset when latest.yml has none',()=>{
+ const unsized=latest.replace(/ +size: 123\n/,'');
+ const feed=feedFromRelease(unsized,{tag:'windows-v0.4.0',version:'0.4.0',changelog,sizes:{'Pi-Desk-0.4.0-Windows-x64-Setup.exe':123}});
+ assert.equal(YAML.parse(feed).files[0].size,123);
+ assert.deepEqual(checkDraft(view(),feed,'0.4.0'),['latest.yml','Pi-Desk-0.4.0-Windows-x64-Setup.exe']);
+ assert.throws(()=>feedFromRelease(unsized,{tag:'windows-v0.4.0',version:'0.4.0',changelog,sizes:{}}),/Größe/);
+});
 test('feed keeps at most ten sections',()=>{
  const many=Array.from({length:12},(_,i)=>`## 0.${20-i}.0\n\n- Punkt ${i}`).join('\n\n');
  const yml=latest.replaceAll('0.4.0','0.20.0');

@@ -17,5 +17,9 @@ contextBridge.exposeInMainWorld('piDesktop',Object.freeze({
   setAuto:value=>ipcRenderer.invoke('pi:update-auto',value),
   onStatus:callback=>{const handler=(_event,status)=>callback(status);ipcRenderer.on('pi:update-status',handler);return ()=>ipcRenderer.removeListener('pi:update-status',handler);}
  }),
+ whatsNew:Object.freeze({
+  pending:()=>ipcRenderer.invoke('pi:whats-new-pending'),
+  all:()=>ipcRenderer.invoke('pi:whats-new-all')
+ }),
  onAction:callback=>{const handler=(_event,action)=>callback(action);ipcRenderer.on('pi:action',handler);return ()=>ipcRenderer.removeListener('pi:action',handler);}
 }));

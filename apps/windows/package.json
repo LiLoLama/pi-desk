@@ -46,6 +46,7 @@
       "public/**",
       "desktop/**",
       "package.json",
+      "CHANGELOG.md",
       "!install-runtime.mjs"
     ],
     "extraResources": [

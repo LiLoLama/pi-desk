@@ -91,7 +91,7 @@ PI_DESK_OMP="$PWD/../macos/runtime/omp" npm start
 
 ## Release veröffentlichen
 
-1. Version in `package.json` erhöhen, Abschnitt in `CHANGELOG.md` schreiben, committen und pushen.
+1. Version in `package.json` erhöhen, Abschnitt in `CHANGELOG.md` schreiben, committen und pushen. Größere Änderungen erhöhen die Mittelnummer (0.4.x → 0.5.0): Nach dem Update öffnet sich einmal „Neu in Pi Desk 0.5“. Fehlerbehebungen erhöhen nur die letzte Stelle (0.4.0 → 0.4.1) und zeigen kein Fenster.
 2. GitHub → Actions → **Windows-Release** → *Run workflow* (oder `gh workflow run windows-release.yml`). Der Workflow lässt sich erst starten, wenn die Workflow-Datei auf dem Standardzweig `main` liegt. Ergebnis: Entwurfs-Release `windows-vX.Y.Z` mit Setup, `latest.yml` und `SHA256SUMS-windows.txt`.
 3. `npm run release:feed` schreibt `updates/windows/latest.yml` lokal. Entwurf herunterladen und testen.
 4. `npm run release:publish` veröffentlicht nach Rückfrage („ja“) das Release, committet nur den Feed und pusht `main`; das Skript läuft nur auf dem Branch `main`. Ab dann sehen Nutzer das Update.

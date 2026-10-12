@@ -6,6 +6,7 @@ const {randomBytes}=require('node:crypto');
 const {isLocal,externalURL}=require('./security.cjs');
 const {autoUpdater}=require('electron-updater');
 const {createUpdates,fileStore,installDecision}=require('./updates.cjs');
+const {whatsNew,recentNotes}=require('./changelog.cjs');
 const UPDATE_FEED='https://raw.githubusercontent.com/LiLoLama/pi-desk/main/updates/windows/';
 let window,helper,origin,token,updates,quitting=false,closing=false;
 app.setName('Pi Desk');
@@ -110,7 +111,8 @@ async function boot(){
  const devFeed=!app.isPackaged&&process.env.PI_DESK_UPDATE_FEED;
  if(devFeed)autoUpdater.forceDevUpdateConfig=true;
  autoUpdater.logger=updateLogger();
- updates=createUpdates({updater:autoUpdater,store:fileStore(path.join(profile,'desktop','updates.json')),current:app.getVersion(),feedURL:devFeed||UPDATE_FEED,install:installUpdate,send:status=>{if(window&&!window.isDestroyed())window.webContents.send('pi:update-status',status);}});
+ const updateStore=fileStore(path.join(profile,'desktop','updates.json'));
+ updates=createUpdates({updater:autoUpdater,store:updateStore,current:app.getVersion(),feedURL:devFeed||UPDATE_FEED,install:installUpdate,send:status=>{if(window&&!window.isDestroyed())window.webContents.send('pi:update-status',status);}});
  ipcMain.handle('pi:update-state',event=>{trusted(event);return updates.status();});
  ipcMain.handle('pi:update-check',event=>{trusted(event);return updates.check(true);});
  ipcMain.handle('pi:update-download',event=>{trusted(event);return updates.download();});
@@ -118,9 +120,15 @@ async function boot(){
  ipcMain.handle('pi:update-skip',event=>{trusted(event);return updates.skip();});
  ipcMain.handle('pi:update-later',event=>{trusted(event);return updates.later();});
  ipcMain.handle('pi:update-auto',(event,value)=>{trusted(event);if(typeof value!=='boolean')throw Error('Ungültige Einstellung');return updates.setAuto(value);});
+ // "Neu in dieser Version": decided before the window loads; the renderer picks it up once.
+ const changelog=await fs.readFile(path.join(app.getAppPath(),'CHANGELOG.md'),'utf8').catch(()=>null);
+ let pendingNews=null;
+ if(changelog!==null){const result=whatsNew(changelog,updateStore.read().seenVersion,app.getVersion());try{updateStore.write({...updateStore.read(),seenVersion:result.remember});}catch{}if(result.show)pendingNews={version:app.getVersion(),notes:result.notes};}
+ ipcMain.handle('pi:whats-new-pending',event=>{trusted(event);const news=pendingNews;pendingNews=null;return news;});
+ ipcMain.handle('pi:whats-new-all',event=>{trusted(event);return {version:app.getVersion(),notes:changelog===null?'':recentNotes(changelog,app.getVersion())};});
  const action=name=>()=>window.webContents.send('pi:action',name);
  Menu.setApplicationMenu(Menu.buildFromTemplate([
-  {label:'Datei',submenu:[{label:'Projekt öffnen …',click:action('add-project')},{label:'Neue Aufgabe',click:action('new')},{label:'Einstellungen',accelerator:'CommandOrControl+,',click:action('settings')},{label:'Nach Updates suchen …',click:action('updates')},{type:'separator'},{label:'Beenden',accelerator:'Alt+F4',click:requestClose}]},
+  {label:'Datei',submenu:[{label:'Projekt öffnen …',click:action('add-project')},{label:'Neue Aufgabe',click:action('new')},{label:'Einstellungen',accelerator:'CommandOrControl+,',click:action('settings')},{label:'Nach Updates suchen …',click:action('updates')},{label:'Was ist neu …',click:action('whats-new')},{type:'separator'},{label:'Beenden',accelerator:'Alt+F4',click:requestClose}]},
   {label:'Bearbeiten',submenu:[{role:'undo'},{role:'redo'},{type:'separator'},{role:'cut'},{role:'copy'},{role:'paste'},{role:'selectAll'}]},
   {label:'Ansicht',submenu:[{label:'Aufgaben suchen',click:action('search')},{label:'Dateien und Vorschau',click:action('result')},{type:'separator'},{role:'resetZoom'},{role:'zoomIn'},{role:'zoomOut'},{role:'togglefullscreen'}]}
  ]));

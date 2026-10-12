@@ -55,7 +55,7 @@
    const u=window.piDesktop?.updates;
    if(!u)return settingsShell(page,note('Updates sind nur in der Desktop-App verfügbar.'));
    const s=await u.state();
-   settingsShell(page,listing('Updates',row('Installierte Version',s.current,'')+row('Letzte Prüfung',s.lastCheck?new Date(s.lastCheck).toLocaleString('de-DE'):'Noch nicht geprüft',''))+`<label class="check-row"><input type="checkbox" data-update-auto ${s.auto?'checked':''}>Automatisch nach Updates suchen</label>`+button('update-check','Jetzt nach Updates suchen')+(s.phase==='upToDate'?note(`Pi Desk ${s.current} ist aktuell.`):'')+(s.phase==='error'?`<p class="error-line">${esc(s.error)}</p>`:'')+note('Pi Desk sucht beim Start und danach alle 6 Stunden. Vor jeder Installation siehst du, was neu ist.'));
+   settingsShell(page,listing('Updates',row('Installierte Version',s.current,'')+row('Letzte Prüfung',s.lastCheck?new Date(s.lastCheck).toLocaleString('de-DE'):'Noch nicht geprüft',''))+`<label class="check-row"><input type="checkbox" data-update-auto ${s.auto?'checked':''}>Automatisch nach Updates suchen</label>`+button('update-check','Jetzt nach Updates suchen')+' '+button('whats-new','Was ist neu')+(s.phase==='upToDate'?note(`Pi Desk ${s.current} ist aktuell.`):'')+(s.phase==='error'?`<p class="error-line">${esc(s.error)}</p>`:'')+note('Pi Desk sucht beim Start und danach alle 6 Stunden. Vor jeder Installation siehst du, was neu ist.'));
   }else if(page==='local')return showLocal();
  }
  openSettings=()=>settingsPage();showArchive=()=>settingsPage('archive');
@@ -130,10 +130,17 @@
   else return closeUpdate();
   const d=updateDialog();d.innerHTML=html;if(!d.open)d.showModal();
  }
+ // "Neu in dieser Version": its own dialog; update dialogs wait until it is closed (latest status only).
+ let heldUpdate=null;
+ const newsDialog=()=>{let d=$('#whats-new-dialog');if(!d){d=document.createElement('dialog');d.id='whats-new-dialog';d.className='connect-dialog update-dialog';d.setAttribute('aria-label','Neu in Pi Desk');d.addEventListener('close',()=>{const held=heldUpdate;heldUpdate=null;if(held)onUpdateStatus(held);});document.body.append(d);}return d;};
+ function showWhatsNew(title,notes){const d=newsDialog();d.innerHTML=`<div class="dialog-head"><h2>${esc(title)}</h2><button class="icon" data-feature="whats-new-close" aria-label="Schließen">${icon('close')}</button></div><div class="update-notes">${updateNotes(notes||'Keine Änderungsnotizen.')}</div><div class="form-actions"><span class="update-spacer"></span><button type="button" class="primary" data-feature="whats-new-close">Verstanden</button></div>`;if(!d.open)d.showModal();}
+ async function openWhatsNew(){const n=await window.piDesktop?.whatsNew?.all();if(n)showWhatsNew('Was ist neu in Pi Desk',n.notes);}
  async function action(name,id,el){
   $('#popover').hidePopover();
   if(name==='settings-page')return settingsPage(id);
   if(name==='update-check')return window.piDesktop.updates.check();
+  if(name==='whats-new')return openWhatsNew();
+  if(name==='whats-new-close'){$('#whats-new-dialog')?.close();return;}
   if(name==='update-download')return window.piDesktop.updates.download();
   if(name==='update-install')return window.piDesktop.updates.install();
   if(name==='update-skip'){closeUpdate();return window.piDesktop.updates.skip();}
@@ -201,7 +208,7 @@
   if(name==='reveal'){const p=needProject();await window.piDesktop?.reveal(selectedFile?choosePath(p.path,selectedFile):p.path);return;}
   if(name==='pet'){await showRuntime();return;}
  }
- perform=async e=>{const b=e.target.closest('button,a');if(b?.dataset.feature)return action(b.dataset.feature,b.dataset.id||'',b);if(b?.dataset.action==='updates'){await settingsPage('updates');return window.piDesktop?.updates?.check();}if(b?.dataset.action==='more'&&task())return more(b);return oldPerform(e);};
+ perform=async e=>{const b=e.target.closest('button,a');if(b?.dataset.feature)return action(b.dataset.feature,b.dataset.id||'',b);if(b?.dataset.action==='updates'){await settingsPage('updates');return window.piDesktop?.updates?.check();}if(b?.dataset.action==='whats-new')return openWhatsNew();if(b?.dataset.action==='more'&&task())return more(b);return oldPerform(e);};
  document.addEventListener('submit',e=>{
   if(e.target.id==='composer'){e.preventDefault();e.stopImmediatePropagation();sendCurrent().catch(showError);return;}
   const f=e.target;if(!f.dataset.featureForm)return;e.preventDefault();e.stopImmediatePropagation();
@@ -238,12 +245,14 @@
  setInterval(()=>{const el=$('.live-status');if(el&&session.busy&&elapsedStart)el.lastChild.textContent=` ${session.pending?.length?'Wartet auf Genehmigung':'OMP arbeitet'} · ${Math.floor((Date.now()-elapsedStart)/1000)} s`;},1000);
  api('desktop-settings').then(s=>{prefs=s;applyAppearance();sync();}).catch(showError);
  function onUpdateStatus(s){
+  if($('#whats-new-dialog')?.open){heldUpdate=s;return;}
   if(s.phase==='downloading'&&downloadHidden)return;
   if(s.phase!=='downloading')downloadHidden=false;
   showUpdate(s);
   if($('#connect-dialog').open&&$('.settings-nav [data-id="updates"][aria-current="page"]')&&['upToDate','error','idle'].includes(s.phase))settingsPage('updates').catch(report);
  }
  window.piDesktop?.updates?.onStatus(onUpdateStatus);
+ window.piDesktop?.whatsNew?.pending().then(n=>{if(n)showWhatsNew(`Neu in Pi Desk ${String(n.version).split('.').slice(0,2).join('.')}`,n.notes);}).catch(report);
  document.addEventListener('change',e=>{if(e.target.matches?.('[data-update-auto]'))window.piDesktop.updates.setAuto(e.target.checked).catch(report);});
  window.piFeatures={settingsPage,showRuntime,sessionTools,sendCurrent,action,safeMarkdown,approvalTool,addImage,showUpdate,onUpdateStatus,getImages:()=>images};
 })();

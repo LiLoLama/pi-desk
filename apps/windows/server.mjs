@@ -86,7 +86,7 @@ function agentPolicy(mode){
     extensions:settings.state.extensions?undefined:[]
   };
 }
-async function spawnWorker(task){const id=task?.id||'auth';const project=task&&db.projects.find(p=>p.id===task.projectId);const mode=task?.mode||'always-ask';const config=path.join(data,`policy-${mode}.json`);const skills=await capabilities.skillPolicy();const policy=agentPolicy(mode);policy.skills=skills;if(!settings.state.extensions)policy.extensions=[];await writeFile(config,JSON.stringify(policy),{mode:0o600});
+async function spawnWorker(task){const id=task?.id||'auth';const project=task&&db.projects.find(p=>p.id===task.projectId);if(project&&!(await stat(project.path).catch(()=>null))?.isDirectory())throw Error(`Projektordner nicht gefunden: ${project.path}. Wurde er verschoben oder umbenannt? Lege ihn an diesen Ort zurück oder öffne ihn über „Projekt öffnen“ neu.`);const mode=task?.mode||'always-ask';const config=path.join(data,`policy-${mode}.json`);const skills=await capabilities.skillPolicy();const policy=agentPolicy(mode);policy.skills=skills;if(!settings.state.extensions)policy.extensions=[];await writeFile(config,JSON.stringify(policy),{mode:0o600});
 const pluginDirs=await plugins.enabledDirs();const hookFiles=await plugins.enabledHooks();
 const args=['--mode','rpc-ui',`--cwd=${project?.path||path.join(data,'login')}`,`--config=${config}`,`--approval-mode=${mode}`,'--no-title',`--session-dir=${path.join(data,'sessions')}`];
 if(!settings.state.extensions&&!pluginDirs.length&&!hookFiles.length)args.push('--no-extensions');

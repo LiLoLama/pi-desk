@@ -1,10 +1,12 @@
 # Pi Desk für Windows – Änderungen
 
-## 0.4.0 – 05.10.2026
+## 0.4.0 – 12.10.2026
 
 - Pi Desk sucht jetzt selbst nach Updates und zeigt vor dem Aktualisieren, was neu ist.
 - Neue Einstellungsseite „Updates“: automatische Suche ein- oder ausschalten und jederzeit manuell prüfen.
 - Pi Desk wird jetzt mit einem Setup installiert statt als ZIP. Chats, Anmeldungen und Einstellungen bleiben erhalten.
+- Wurde ein Projektordner verschoben oder umbenannt, nennt Pi Desk jetzt den fehlenden Ordner statt nur „OMP beendet“.
+- Downloads lokaler Modelle in den Standardordner scheitern nicht mehr an Kurznamen oder Verknüpfungen im Profilpfad.
 - Wichtig: Diese Version einmalig von Hand installieren. Danach kommen Updates automatisch.
 
 ## 0.3.1 – 05.10.2026

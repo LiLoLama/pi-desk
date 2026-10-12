@@ -1,12 +1,22 @@
-version: 0.4.0
+version: 0.5.0
 files:
-  - url: https://github.com/LiLoLama/pi-desk/releases/download/windows-v0.4.0/Pi-Desk-0.4.0-Windows-x64-Setup.exe
-    sha512: LAVRlMegWQh9eVs03dGKB1ylJhDzMIHxC7+K4gZzeFhJOBKSy5MSANtgo/knB2YwlF06p+6bImoihHg4cgucwQ==
-    size: 195192314
-path: https://github.com/LiLoLama/pi-desk/releases/download/windows-v0.4.0/Pi-Desk-0.4.0-Windows-x64-Setup.exe
-sha512: LAVRlMegWQh9eVs03dGKB1ylJhDzMIHxC7+K4gZzeFhJOBKSy5MSANtgo/knB2YwlF06p+6bImoihHg4cgucwQ==
-releaseDate: 2026-10-12T08:45:54.951Z
+  - url: https://github.com/LiLoLama/pi-desk/releases/download/windows-v0.5.0/Pi-Desk-0.5.0-Windows-x64-Setup.exe
+    sha512: ESr2lnfl8eekptoQkj9K9FeOga9og8h79T0IimK8zYuh1Ad2SeXYVF9zXJsjeK6dNZ2+E2c3FFdqyOu+qt+h1A==
+    size: 195190254
+path: https://github.com/LiLoLama/pi-desk/releases/download/windows-v0.5.0/Pi-Desk-0.5.0-Windows-x64-Setup.exe
+sha512: ESr2lnfl8eekptoQkj9K9FeOga9og8h79T0IimK8zYuh1Ad2SeXYVF9zXJsjeK6dNZ2+E2c3FFdqyOu+qt+h1A==
+releaseDate: 2026-10-12T09:49:26.404Z
 releaseNotes: >-
+  ## 0.5.0 – 12.10.2026
+
+
+  - Nach Updates mit größeren Neuerungen zeigt Pi Desk beim ersten Start einmal,
+  was neu ist. Reine Fehlerbehebungen bleiben still.
+
+  - „Was ist neu“ zeigt den Changelog jederzeit: in den Einstellungen unter
+  „Updates“ und im Menü.
+
+
   ## 0.4.0 – 12.10.2026
 
 

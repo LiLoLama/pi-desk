@@ -91,17 +91,24 @@ struct CapabilitySettingsView: View {
     }
   }
   private func startLogin(_ name: String) {
+    guard login == nil, !working else { return }
+    working = true
     error = ""
     notice = ""
     Task {
       do {
         let result = try await desk.api("capabilities/mcp-login", body: ["name": name])
-        let session = MCPLoginSession(
-          id: result["id"] as? String ?? "", url: result["url"] as? String ?? "", name: name)
-        login = session
-        desk.open(session.url)
-        await pollLogin(session.id)
-      } catch { self.error = error.localizedDescription }
+        working = false
+        let id = result["id"] as? String ?? ""
+        let url = result["url"] as? String ?? ""
+        guard login?.id != id else { return }
+        login = MCPLoginSession(id: id, url: url, name: result["name"] as? String ?? name)
+        if !url.isEmpty { desk.open(url) }
+        await pollLogin(id)
+      } catch {
+        working = false
+        self.error = error.localizedDescription
+      }
     }
   }
   private func pollLogin(_ id: String) async {
@@ -136,7 +143,11 @@ struct CapabilitySettingsView: View {
   }
   private func cancelLogin(_ session: MCPLoginSession) {
     login = nil
-    Task { _ = try? await desk.api("capabilities/mcp-login-cancel", body: ["id": session.id]) }
+    working = true
+    Task {
+      _ = try? await desk.api("capabilities/mcp-login-cancel", body: ["id": session.id])
+      working = false
+    }
   }
   var body: some View {
     VStack(alignment: .leading, spacing: 16) {

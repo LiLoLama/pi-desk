@@ -300,6 +300,14 @@ import SwiftUI
   // MARK: Window
 
   func showWindow() {
+    // "Neu in dieser Version" goes first; the update dialog follows once it is closed.
+    if WhatsNew.shared.isOpen {
+      WhatsNew.shared.whenClosed { [weak self] in
+        guard let self, self.phase != .idle else { return }
+        self.showWindow()
+      }
+      return
+    }
     if window == nil {
       let window = NSWindow(contentViewController: NSHostingController(rootView: UpdateView(updates: self)))
       window.title = "Pi Desk aktualisieren"
@@ -477,6 +485,7 @@ struct UpdateSettingsView: View {
       Toggle("Automatisch nach Updates suchen", isOn: $updates.automaticChecks)
       HStack {
         Button("Jetzt nach Updates suchen") { updates.checkNow() }
+        Button("Was ist neu") { WhatsNew.shared.showAll() }
         if case .ready = updates.phase { Button("Jetzt neu starten") { updates.restartNow() } }
       }
       if case .moveToApplications = updates.phase {

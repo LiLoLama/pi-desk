@@ -3237,6 +3237,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     Task { @MainActor in
       Desk.shared.start()
       AppUpdates.shared.start()
+      WhatsNew.shared.showIfNeeded()
       #if PI_DESK_PETS
         PetWindow.shared.start()
       #endif
@@ -3262,6 +3263,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
       .windowStyle(.hiddenTitleBar).commands {
         CommandGroup(after: .appInfo) {
           Button("Nach Updates suchen …") { AppUpdates.shared.checkNow() }
+          Button("Was ist neu …") { WhatsNew.shared.showAll() }
         }
         CommandGroup(replacing: .newItem) {
           Button("Neue Aufgabe") { desk.run { try await desk.newTask() } }.keyboardShortcut(

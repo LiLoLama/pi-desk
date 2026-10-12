@@ -25,3 +25,9 @@ test('native update rules: versions, notes and replaceable locations', async () 
     await rm(tmp, {recursive: true, force: true});
   }
 });
+
+test('the app bundle compiles WhatsNew.swift and ships CHANGELOG.md', async () => {
+  const build = await readFile(path.join(root, 'native/build.py'), 'utf8');
+  assert.match(build, /'WhatsNew\.swift'/);
+  assert.match(build, /shutil\.copy2\(root\/'CHANGELOG\.md',resources\/'CHANGELOG\.md'\)/);
+});

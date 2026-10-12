@@ -64,7 +64,7 @@ def resolve_node():
 node=resolve_node()
 omp=root/'runtime'/'omp'
 if hashlib.sha256(omp.read_bytes()).hexdigest()!='23d3f9ab712fe700e80a43dbd1e8159dfea8e106bf717648a49b1bba1ad3e508':raise SystemExit('Unexpected OMP runtime checksum')
-sources=['PiDesk.swift','Markdown.swift','Pets.swift','Settings.swift','Shortcuts.swift','Sidebar.swift','Capabilities.swift','LocalModels.swift','PetActivity.swift','UpdateLogic.swift','Updates.swift','Extensions.swift']
+sources=['PiDesk.swift','Markdown.swift','Pets.swift','Settings.swift','Shortcuts.swift','Sidebar.swift','Capabilities.swift','LocalModels.swift','PetActivity.swift','UpdateLogic.swift','Updates.swift','WhatsNew.swift','Extensions.swift']
 subprocess.run(['swiftc','-swift-version','5','-parse-as-library','-O','-target','arm64-apple-macosx14.0','-module-cache-path','/private/tmp/pi-desk-swift-cache','-F',str(sparkle.parent)]+[str(root/'native'/name) for name in sources]+['-o',str(macos/'PiDesk'),'-framework','SwiftUI','-framework','AppKit','-framework','Sparkle','-Xlinker','-rpath','-Xlinker','@executable_path/../Frameworks'],check=True)
 frameworks=app/'Contents'/'Frameworks';frameworks.mkdir(parents=True,exist_ok=True)
 shutil.copytree(sparkle,frameworks/'Sparkle.framework',symlinks=True,dirs_exist_ok=True)
@@ -78,6 +78,7 @@ shutil.copytree(root/'runtime',host/'runtime',dirs_exist_ok=True)
 # Browser assets remain available only to authenticated native requests, not used for native UI.
 shutil.copytree(root/'public',host/'public',dirs_exist_ok=True)
 shutil.copytree(root/'licenses',resources/'licenses',dirs_exist_ok=True)
+shutil.copy2(root/'CHANGELOG.md',resources/'CHANGELOG.md')
 iconset=root/'dist'/'AppIcon.iconset';iconset.mkdir(exist_ok=True)
 subprocess.run(['swift','-module-cache-path','/private/tmp/pi-desk-swift-cache',str(root/'native'/'Icon.swift'),str(iconset)],check=True)
 subprocess.run(['iconutil','-c','icns',str(iconset),'-o',str(resources/'AppIcon.icns')],check=True)

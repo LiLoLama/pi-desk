@@ -4,7 +4,7 @@ Eigenständiger Windows-Port in einem eigenen Ordner. Die native Mac-App bleibt 
 
 ## Start auf Windows
 
-1. `Pi-Desk-0.4.0-Windows-x64-Setup.exe` ausführen. Bei der Installation „Nur für mich“ wählen – dann sind keine Administratorrechte nötig und Updates laufen ohne Rückfrage. Pi Desk aus Startmenü oder Desktopverknüpfung öffnen.
+1. `Pi-Desk-0.5.0-Windows-x64-Setup.exe` ausführen. Bei der Installation „Nur für mich“ wählen – dann sind keine Administratorrechte nötig und Updates laufen ohne Rückfrage. Pi Desk aus Startmenü oder Desktopverknüpfung öffnen.
 2. Anbieter verbinden oder unter Einstellungen einen kompatiblen Modellserver hinzufügen.
 3. Mit **Strg+O** einen Projektordner öffnen, Modell wählen und Nachricht senden.
 

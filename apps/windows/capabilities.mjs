@@ -18,7 +18,9 @@ function oauthConfig(raw,old,changed){
  if(raw===undefined)return changed?undefined:old;
  if(!object(raw))throw Error('Erweiterte Anmeldung ist ungültig.');
  const text=(v,max,label)=>{if(v===undefined||v===null||v==='')return '';if(typeof v!=='string'||v.length>max||/[\r\n\0]/.test(v))throw Error(label+' ist ungültig.');return v.trim();};
- const o={},clientId=text(raw.clientId,512,'Client-ID'),scope=text(raw.scope,2000,'Scopes'),secret=text(raw.clientSecret,4096,'Client-Geheimnis');
+ // Unchanged target: keep every unmanaged OMP field (redirectUri, callbackPath, prompt, ...) and only rewrite the managed ones.
+ const o=changed?{}:{...old};for(const k of ['clientId','scope','callbackPort','clientSecret'])delete o[k];
+ const clientId=text(raw.clientId,512,'Client-ID'),scope=text(raw.scope,2000,'Scopes'),secret=text(raw.clientSecret,4096,'Client-Geheimnis');
  if(clientId)o.clientId=clientId;if(scope)o.scope=scope;
  if(raw.callbackPort!==undefined&&raw.callbackPort!==null&&raw.callbackPort!==''){const port=Number(raw.callbackPort);if(!Number.isInteger(port)||port<1024||port>65535)throw Error('Rückleitungs-Port muss zwischen 1024 und 65535 liegen.');o.callbackPort=port;}
  if(secret)o.clientSecret=secret;
@@ -87,18 +89,23 @@ export class Capabilities {
  if(!raw.edit&&doc.mcpServers[raw.name])throw Error('Servername ist bereits vorhanden.');
  const previous=doc.mcpServers[raw.name]?.url;doc.mcpServers[raw.name]=mcpConfig(raw.config,doc.mcpServers[raw.name]);
  doc.disabledServers=(doc.disabledServers||[]).filter(x=>x!==raw.name);doc.enabledServers=(doc.enabledServers||[]).filter(x=>x!==raw.name);
- await atomic(this.mcpFile,doc);if(previous&&previous!==doc.mcpServers[raw.name].url)this.#forget(previous);return this.servers();}
+ await atomic(this.mcpFile,doc);const next=doc.mcpServers[raw.name].url;
+ // Any edit ends a pending "login required"; credentials only go away with the URL they belong to.
+ if(previous)this.authRequired.delete(previous);if(next)this.authRequired.delete(next);if(previous&&previous!==next)this.#forget(previous);return this.servers();}
  async setServer(name,enabled,remove=false){const doc=await this.mcpDocument();if(!Object.hasOwn(doc.mcpServers,name))throw Error('MCP-Server nicht gefunden.');
  const url=doc.mcpServers[name].url;if(remove)delete doc.mcpServers[name];else doc.mcpServers[name].enabled=enabled===true;
  doc.disabledServers=(doc.disabledServers||[]).filter(x=>x!==name);doc.enabledServers=(doc.enabledServers||[]).filter(x=>x!==name);
  // Keep an explicit denylist when disabled, so inherited sources cannot reactivate it.
  if(!enabled&&!remove)doc.disabledServers.push(name);
  await atomic(this.mcpFile,doc);if(remove)this.#forget(url);return this.servers();}
+ // OMP rotates refresh tokens inside the probe copy of agent.db; carry a changed active credential back so the real store keeps the valid one.
+ adoptRefreshed(url,dir,before){try{const now=new McpCredentials(dir).active(url);if(now&&now!==before)this.credentials.save(url,JSON.parse(now));}catch{}}
  async probe(name,binary,env,onRpc){
  const doc=await this.mcpDocument(),config=doc.mcpServers[name];if(!config)throw Error('MCP-Server nicht gefunden.');
- const root=await mkdtemp(path.join(this.data,'mcp-probe-'));let rpc;
+ const root=await mkdtemp(path.join(this.data,'mcp-probe-'));let rpc,snapshot=false,before=null;
  try{
- await mkdir(path.join(root,'agent'));this.credentials.snapshot(path.join(root,'agent'));await atomic(path.join(root,'agent/mcp.json'),{mcpServers:{[name]:{...config,enabled:true}}});
+ await mkdir(path.join(root,'agent'));await atomic(path.join(root,'agent/mcp.json'),{mcpServers:{[name]:{...config,enabled:true}}});
+ if(config.url){try{before=this.credentials.active(config.url);snapshot=this.credentials.snapshot(path.join(root,'agent'));}catch{snapshot=false;}}
  await atomic(path.join(root,'policy.json'),{mcp:{enableProjectConfig:false},enabledProviders:[],extensions:[]});
  rpc=new Rpc(binary,['--mode','rpc-ui','--model=anthropic/claude-sonnet-4-5',`--cwd=${root}`,`--config=${path.join(root,'policy.json')}`,'--no-session','--no-title','--no-extensions','--no-skills','--no-rules','--no-lsp','--tools=read'],{...env,PI_CODING_AGENT_DIR:path.join(root,'agent')});onRpc?.(rpc);
  let output='';rpc.on('frame',f=>{if(f.type==='command_output')output+=(f.text??f.message??'')+'\n';});
@@ -112,6 +119,6 @@ export class Capabilities {
  if(config.url)this.authRequired.delete(config.url);
  const toolNames=output.split('\n').map(l=>l.match(/^\s*- (.+)$/)?.[1]).filter(Boolean);
  return {connected:true,tools:toolNames,message:`Verbunden · ${toolNames.length} Werkzeuge`};
- }finally{await rpc?.close();await rm(root,{recursive:true,force:true});}
+ }finally{await rpc?.close();if(snapshot)this.adoptRefreshed(config.url,path.join(root,'agent'),before);await rm(root,{recursive:true,force:true});}
  }
 }

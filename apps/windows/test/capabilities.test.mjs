@@ -25,7 +25,7 @@ test('MCP secrets stay private, changed targets require explicit secrets, other 
  assert.throws(()=>mcpConfig({type:'stdio',command:'node',args:'invalid'}),/Argumente/);
  }finally{await rm(root,{recursive:true,force:true});}
 });
-import {ompSchema} from './omp-schema.mjs';import {oauthFixture,browser} from './oauth-fixture.mjs';
+import {McpCredentials} from '../mcp-credentials.mjs';import {ompSchema} from './omp-schema.mjs';import {oauthFixture,browser} from './oauth-fixture.mjs';
 test('advanced login settings are validated, kept private and survive edits',async()=>{
  const root=await mkdtemp(path.join(os.tmpdir(),'pi-mcp-oauth-'));try{
  await mkdir(path.join(root,'agent'));const c=new Capabilities(root);await c.init();
@@ -67,5 +67,32 @@ test('mcp-remote is recognized and converted to HTTP with headers',async()=>{
  const [s]=await c.convertRemote('aiti');assert.equal(s.type,'http');assert.equal(s.url,'https://example.com/mcp');assert.equal(s.enabled,true);assert.equal(s.login,'none');assert.equal(s.remote,null);
  const saved=(await c.mcpDocument()).mcpServers.aiti;assert.deepEqual(saved.headers,{'X-Team':'blau'});assert.deepEqual(saved.env,{A:'1'});
  await assert.rejects(c.convertRemote('aiti'),/kein mcp-remote/);
+ }finally{await rm(root,{recursive:true,force:true});}
+});
+test('unmanaged OMP oauth fields survive edits of an unchanged target',async()=>{
+ const old={type:'http',url:'https://example.com/mcp',oauth:{clientId:'alt',redirectUri:'http://127.0.0.1:1/cb',callbackPath:'/cb',prompt:'consent',clientSecret:'s'}};
+ const kept=mcpConfig({type:'http',url:'https://example.com/mcp',oauth:{clientId:'neu'}},old).oauth;
+ assert.deepEqual(kept,{clientId:'neu',redirectUri:'http://127.0.0.1:1/cb',callbackPath:'/cb',prompt:'consent',clientSecret:'s'});
+ assert.deepEqual(mcpConfig({type:'http',url:'https://example.com/mcp',oauth:{clearSecret:true}},old).oauth,{redirectUri:'http://127.0.0.1:1/cb',callbackPath:'/cb',prompt:'consent'});
+ assert.equal(mcpConfig({type:'http',url:'https://example.com/mcp'},old).oauth,old.oauth);
+ assert.deepEqual(mcpConfig({type:'http',url:'https://other.example/mcp',oauth:{clientId:'x',clearSecret:true}},old).oauth,{clientId:'x'});
+});
+test('a server edit with the same URL clears the required state, credentials stay',async()=>{
+ const root=await mkdtemp(path.join(os.tmpdir(),'pi-mcp-req-'));try{
+ await mkdir(path.join(root,'agent'));const c=new Capabilities(root);await c.init();const url='https://example.com/mcp';
+ await c.saveServer({name:'app',config:{type:'http',url}});c.authRequired.add(url);assert.equal((await c.servers())[0].login,'required');
+ await c.saveServer({name:'app',edit:true,config:{type:'http',url,headers:{A:'b'}}});assert.equal((await c.servers())[0].login,'none');
+ const other='https://example.com/neu';c.authRequired.add(other);await c.saveServer({name:'app',edit:true,config:{type:'http',url:other,headers:{A:'b'}}});assert.equal((await c.servers())[0].login,'none');assert.ok(!c.authRequired.has(url));
+ }finally{await rm(root,{recursive:true,force:true});}
+});
+test('adoptRefreshed copies a rotated credential from the probe copy back, but only when it changed',async()=>{
+ const root=await mkdtemp(path.join(os.tmpdir(),'pi-mcp-sync-'));try{
+ const url='https://example.com/mcp',cred={access:'a',refresh:'r1'};await mkdir(path.join(root,'agent'));await mkdir(path.join(root,'probe'));
+ ompSchema(path.join(root,'agent/agent.db'));const c=new Capabilities(root);await c.init();c.credentials.save(url,cred);
+ const before=c.credentials.active(url);assert.ok(c.credentials.snapshot(path.join(root,'probe')));
+ c.adoptRefreshed(url,path.join(root,'probe'),before);assert.deepEqual(JSON.parse(c.credentials.active(url)),cred);
+ new McpCredentials(path.join(root,'probe')).save(url,{access:'b',refresh:'r2'});
+ c.adoptRefreshed(url,path.join(root,'probe'),before);assert.deepEqual(JSON.parse(c.credentials.active(url)),{access:'b',refresh:'r2'});
+ c.adoptRefreshed(url,path.join(root,'nichtda'),c.credentials.active(url));c.adoptRefreshed(url,path.join(root,'probe'),null);
  }finally{await rm(root,{recursive:true,force:true});}
 });

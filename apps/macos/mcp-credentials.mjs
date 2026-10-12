@@ -18,6 +18,12 @@ export class McpCredentials{
   try{db=this.#open();const rows=db.prepare("SELECT disabled_cause FROM auth_credentials WHERE provider=? AND credential_type='oauth'").all(credentialKey(url));return !rows.length?'none':rows.some(r=>r.disabled_cause===null)?'signed-in':'expired';}
   catch{return 'none';}finally{db?.close();}
  }
+ // Data of the active row (what OMP would use), or null; used to detect tokens OMP rotated in a copy.
+ active(url){
+  if(!this.exists())return null;let db;
+  try{db=this.#open();return db.prepare("SELECT data FROM auth_credentials WHERE provider=? AND credential_type='oauth' AND disabled_cause IS NULL ORDER BY id DESC LIMIT 1").get(credentialKey(url))?.data??null;}
+  catch{return null;}finally{db?.close();}
+ }
  save(url,credential){
   if(!this.exists())throw new MissingStore();
   const db=this.#open();

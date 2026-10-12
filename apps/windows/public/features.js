@@ -59,23 +59,27 @@
   }else if(page==='local')return showLocal();
  }
  openSettings=()=>settingsPage();showArchive=()=>settingsPage('archive');
+ const redirectText=(port,clientId)=>{const n=Number(port);return Number.isInteger(n)&&n>=1024&&n<=65535?`Beim Anbieter eintragen: http://127.0.0.1:${n}/callback`:String(clientId||'').trim()?'Registrierte Apps brauchen meist einen festen Port.':'Beim Anbieter einzutragen: http://127.0.0.1:<Port>/callback';};
+ const redirectNote=(port,clientId)=>`<p class="menu-note" id="oauth-redirect">${esc(redirectText(port,clientId))}</p>`;
  function mcpEditor(name){
   const s=caps.servers?.find(s=>s.name===name)||{type:'stdio',args:[],enabled:false};
-  contentDialog(name?'MCP-Server bearbeiten':'MCP-Server hinzufügen',form('mcp',field('name','Name',s.name||'','text',name?'readonly':'required')+select('type','Verbindungstyp',['stdio','http','sse'],s.type)+field('command','Programm (stdio)',s.command||'')+area('args','Argumente als JSON-Liste',JSON.stringify(s.args||[]))+field('cwd','Arbeitsordner (optional)',s.cwd||'')+field('url','URL (HTTP/SSE)',s.url||'')+area('env','Umgebungsvariablen als JSON-Objekt','')+area('headers','HTTP-Header als JSON-Objekt','')+`<details class="advanced-login"${s.oauth?.clientId||s.oauth?.callbackPort?' open':''}><summary>Erweiterte Anmeldung (nur HTTP/SSE)</summary>`+note('Nur nötig, wenn der Anbieter eine registrierte App verlangt. Leer lassen meldet Pi Desk automatisch an.')+field('oauthClientId','Client-ID',s.oauth?.clientId||'')+field('oauthClientSecret',s.oauth?.hasClientSecret?'Client-Geheimnis (gespeichert, leer lassen behält es)':'Client-Geheimnis (optional)','','password')+(s.oauth?.hasClientSecret?check('oauthClearSecret','Gespeichertes Client-Geheimnis entfernen',false):'')+field('oauthScope','Scopes (durch Leerzeichen getrennt)',s.oauth?.scope||'')+field('oauthPort','Rückleitungs-Port (optional)',s.oauth?.callbackPort||'','number','min="1024" max="65535"')+note('Beim Anbieter einzutragen: http://127.0.0.1:<Port>/callback')+`</details>`+note(`Gespeicherte Variablen: ${(s.envKeys||[]).join(', ')||'keine'}. Header: ${(s.headerKeys||[]).join(', ')||'keine'}. Leer lassen behält Werte; {} entfernt sie.`)+check('enabled','Aktivieren',s.enabled),'Speichern',name||''));
+  contentDialog(name?'MCP-Server bearbeiten':'MCP-Server hinzufügen',form('mcp',field('name','Name',s.name||'','text',name?'readonly':'required')+select('type','Verbindungstyp',['stdio','http','sse'],s.type)+field('command','Programm (stdio)',s.command||'')+area('args','Argumente als JSON-Liste',JSON.stringify(s.args||[]))+field('cwd','Arbeitsordner (optional)',s.cwd||'')+field('url','URL (HTTP/SSE)',s.url||'')+area('env','Umgebungsvariablen als JSON-Objekt','')+area('headers','HTTP-Header als JSON-Objekt','')+`<details class="advanced-login"${s.oauth?.clientId||s.oauth?.callbackPort?' open':''}><summary>Erweiterte Anmeldung (nur HTTP/SSE)</summary>`+note('Nur nötig, wenn der Anbieter eine registrierte App verlangt. Leer lassen meldet Pi Desk automatisch an.')+field('oauthClientId','Client-ID',s.oauth?.clientId||'')+field('oauthClientSecret',s.oauth?.hasClientSecret?'Client-Geheimnis (gespeichert, leer lassen behält es)':'Client-Geheimnis (optional)','','password')+(s.oauth?.hasClientSecret?check('oauthClearSecret','Gespeichertes Client-Geheimnis entfernen',false):'')+field('oauthScope','Scopes (durch Leerzeichen getrennt)',s.oauth?.scope||'')+field('oauthPort','Rückleitungs-Port (optional)',s.oauth?.callbackPort||'','number','min="1024" max="65535"')+redirectNote(s.oauth?.callbackPort,s.oauth?.clientId)+`</details>`+note(`Gespeicherte Variablen: ${(s.envKeys||[]).join(', ')||'keine'}. Header: ${(s.headerKeys||[]).join(', ')||'keine'}. Leer lassen behält Werte; {} entfernt sie.`)+check('enabled','Aktivieren',s.enabled),'Speichern',name||''));
  }
  // MCP OAuth: the engine runs the login; the browser opens through the main process (openExternal).
  let loginSession=null,loginBusy=false;
+ const loginOpen=()=>!!$('#mcp-login-dialog')&&$('#connect-dialog').open;
+ const showLoginDialog=s=>contentDialog('Anmeldung im Browser abschließen',`<div id="mcp-login-dialog">${note(`Pi Desk wartet auf die Freigabe für „${s.name}“. Bestätige das Öffnen im Browser und schließe die Anmeldung dort ab. Falls sich nichts geöffnet hat, nutze „Im Browser öffnen“ oder „Link kopieren“.`)}<div class="form-actions">${button('mcp-login-open','Im Browser öffnen')}${button('mcp-login-copy','Link kopieren')}<span class="update-spacer"></span>${button('mcp-login-cancel','Abbrechen',s.id)}</div></div>`);
  async function mcpLogin(name){
-  if(loginBusy||loginSession)return;
+  if(loginBusy)return;if(loginSession)return showLoginDialog(loginSession);
   loginBusy=true;let s;try{s=await api('capabilities/mcp-login',{name});}finally{loginBusy=false;}
-  if(loginSession)return;
-  loginSession=s;if(s.url)window.open(s.url,'_blank');
-  contentDialog('Anmeldung im Browser abschließen',note(`Pi Desk wartet auf die Freigabe für „${s.name||name}“. Der Browser sollte sich geöffnet haben.`)+`<div class="form-actions">${button('mcp-login-open','Im Browser öffnen')}${button('mcp-login-copy','Link kopieren')}<span class="update-spacer"></span>${button('mcp-login-cancel','Abbrechen',s.id)}</div>`);
+  if(loginSession)return showLoginDialog(loginSession);
+  loginSession={...s,name:s.name||name};s=loginSession;if(s.url)window.open(s.url,'_blank');
+  showLoginDialog(s);
   try{
    while(loginSession?.id===s.id){
     await new Promise(r=>setTimeout(r,1000));if(loginSession?.id!==s.id)return;
     const st=await api('capabilities/mcp-login-status',{id:s.id});if(loginSession?.id!==s.id)return;if(['starting','waiting'].includes(st.state))continue;
-    loginSession=null;await settingsPage('mcp');if(st.state==='done')toast('Angemeldet.');else if(st.state==='failed')throw Error(st.error);return;
+    loginSession=null;const open=loginOpen();if(open)await settingsPage('mcp');if(st.state==='done')toast('Angemeldet.');else if(st.state==='failed'){if(open)throw Error(st.error);toast('Anmeldung fehlgeschlagen: '+st.error);}return;
    }
   }finally{if(loginSession?.id===s.id)loginSession=null;}
  }
@@ -253,7 +257,7 @@
  },true);
  document.addEventListener('change',e=>{if(e.target.dataset.contextModel)api('local-models/context',{id:e.target.dataset.contextModel,contextSize:Number(e.target.value)}).catch(showError).finally(()=>showLocal().catch(showError));});
  document.addEventListener('change',e=>{if(e.target.name==='name'&&e.target.closest('[data-feature-form=rules]')){const file=ruleList.find(f=>f.name===e.target.value);$('#f-text').value=file?.text||'';}});
- document.addEventListener('input',e=>{if(e.target.id==='f-commandFilter'){const q=e.target.value.toLowerCase();$('#command-list').querySelectorAll('.connection-row').forEach(row=>row.hidden=!row.textContent.toLowerCase().includes(q));}});
+ document.addEventListener('input',e=>{if(e.target.id==='f-oauthPort'||e.target.id==='f-oauthClientId'){const f=e.target.form,n=$('#oauth-redirect');if(f&&n)n.textContent=redirectText(val(f,'oauthPort'),val(f,'oauthClientId'));}if(e.target.id==='f-commandFilter'){const q=e.target.value.toLowerCase();$('#command-list').querySelectorAll('.connection-row').forEach(row=>row.hidden=!row.textContent.toLowerCase().includes(q));}});
  document.addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.matches('a[data-feature]')){e.preventDefault();perform(e).catch(showError);}});
  $('#connect-dialog').addEventListener('close',()=>{if(!$('#connect-dialog').open){clearInterval(localPoll);$('#connect-dialog').classList.remove('feature-dialog');}});
  $('#prompt').before(Object.assign(document.createElement('div'),{id:'image-attachments',className:'image-attachments'}));

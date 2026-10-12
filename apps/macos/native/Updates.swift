@@ -302,6 +302,7 @@ import SwiftUI
   func showWindow() {
     // "Neu in dieser Version" goes first; the update dialog follows once it is closed.
     if WhatsNew.shared.isOpen {
+      WhatsNew.shared.bringToFront()
       WhatsNew.shared.whenClosed { [weak self] in
         guard let self, self.phase != .idle else { return }
         self.showWindow()

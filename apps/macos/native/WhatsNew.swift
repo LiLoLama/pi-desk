@@ -38,6 +38,12 @@ import SwiftUI
 
   func close() { window?.close() }
 
+  /// A held update dialog must not wait behind a covered window the user cannot see.
+  func bringToFront() {
+    window?.makeKeyAndOrderFront(nil)
+    NSApp.activate(ignoringOtherApps: true)
+  }
+
   private func present(title: String, notes: String) {
     let view = WhatsNewView(title: title, notes: notes) { [weak self] in self?.close() }
     if let window {
@@ -101,6 +107,7 @@ private struct WhatsNewView: View {
       }
     }.padding(24).frame(width: 520, alignment: .leading)
       .background(Color(red: 0.105, green: 0.114, blue: 0.118)).preferredColorScheme(.dark).tint(tint)
-      .onExitCommand(perform: close)
+      // Nothing in this window takes focus, so Esc needs a cancel shortcut rather than onExitCommand.
+      .background(Button("", action: close).keyboardShortcut(.cancelAction).opacity(0))
   }
 }

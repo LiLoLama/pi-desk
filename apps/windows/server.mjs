@@ -44,7 +44,14 @@ const clients=new Set(),workers=new Map(),starting=new Map();let authPromise,aut
 const cookie=randomBytes(32).toString('hex');
 function broadcast(event){for(const res of clients){if(res.writableLength>2000000){res.destroy();clients.delete(res);}else res.write(`data: ${JSON.stringify(event)}\n\n`);}}
 function snapshot(){return {projects:db.projects,tasks:db.tasks.map(t=>({...t,busy:!!(workers.get(t.id)?.busy||workers.get(t.id)?.queue.length)})),authBusy:authWorker?.busy||false};}
-function changed(){broadcast({type:'state',data:snapshot()});}
+// MCP logins reach OMP only on its next start: idle workers restart now, busy ones once their work is done.
+function reloadForMcp(){for(const w of workers.values())w.reloadWhenIdle=true;if(authWorker)authWorker.reloadWhenIdle=true;changed();}
+function reloadIdle(){let closed=false;
+for(const [id,w] of workers)if(w.reloadWhenIdle&&!w.busy&&!w.pending.size){w.intentional=true;workers.delete(id);w.rpc.close().catch(()=>{});closed=true;}
+if(authWorker?.reloadWhenIdle&&!authWorker.busy&&!authWorker.pending.size){const w=authWorker;authWorker=null;w.intentional=true;w.rpc.close().catch(()=>{});closed=true;}
+if(closed)broadcast({type:'settings_updated'});}
+function changed(){reloadIdle();broadcast({type:'state',data:snapshot()});}
+let mcpLogin=null;
 const modes={'always-ask':'Nachfragen',write:'Dateien erlauben',yolo:'Vollzugriff'};
 const builtinTools=['read','write','edit','bash','grep','glob','ast_edit','ask','debug','eval','lsp','task','wait','todo','web_search'];
 function taskTools(){
@@ -271,6 +278,18 @@ if(route==='/api/capabilities/skill-add')return updateSettings(async()=>({skills
 if(route==='/api/capabilities/skill-state')return updateSettings(async()=>({skills:await capabilities.setSkill(b.id,b.enabled,b.remove)}));
 if(route==='/api/capabilities/mcp-save')return updateSettings(async()=>({servers:await capabilities.saveServer(b)}));
 if(route==='/api/capabilities/mcp-state')return updateSettings(async()=>({servers:await capabilities.setServer(b.name,b.enabled,b.remove)}));
+if(route==='/api/capabilities/mcp-convert-remote')return updateSettings(async()=>({servers:await capabilities.convertRemote(b.name)}));
+if(route==='/api/capabilities/mcp-login'){
+if(['starting','waiting'].includes(mcpLogin?.state))return {id:mcpLogin.id,url:mcpLogin.url,name:mcpLogin.name};
+// OMP creates agent.db on its first start; the login must not invent OMP's schema.
+if(!capabilities.credentials.exists())await auth();
+const session={id:randomUUID(),name:String(b.name||''),state:'starting',error:'',url:'',controller:new AbortController()};mcpLogin=session;
+const ready=new Promise(resolve=>{session.ready=resolve;});
+capabilities.login(session.name,{signal:session.controller.signal,onUrl:url=>{session.url=url;session.state='waiting';session.ready();}}).then(()=>{session.state='done';reloadForMcp();},e=>{session.state=session.controller.signal.aborted?'cancelled':'failed';session.error=e.message;session.ready();});
+await ready;if(session.state==='failed')throw Error(session.error);return {id:session.id,url:session.url,name:session.name};}
+if(route==='/api/capabilities/mcp-login-status'){if(!mcpLogin||mcpLogin.id!==b.id)throw Error('Anmeldung nicht gefunden.');return {state:mcpLogin.state,error:mcpLogin.error};}
+if(route==='/api/capabilities/mcp-login-cancel'){if(mcpLogin?.id===b.id)mcpLogin.controller.abort();return {ok:true};}
+if(route==='/api/capabilities/mcp-logout'){const servers=await capabilities.logout(b.name);reloadForMcp();return {servers};}
 if(route==='/api/capabilities/mcp-test')return capabilities.probe(b.name,runtimeBinary(here),process.env,rpc=>{engines.add(rpc);rpc.once('closed',()=>engines.delete(rpc));});
 if(route==='/api/capabilities/plugin-add')return updateSettings(async()=>({plugins:await plugins.addPlugin(b.path)}));
 if(route==='/api/capabilities/plugin-state')return updateSettings(async()=>({plugins:await plugins.setPlugin(b.id,b.enabled,b.remove)}));
@@ -535,7 +554,7 @@ if(route==='/api/queue-remove'){
 throw Error('Unbekannte Aktion');}
 const mutations=new Map();
 async function dispatch(req,url){const key=req.method==='POST'&&!['/api/respond','/api/abort','/api/follow-up','/api/steer','/api/queue-remove','/api/thinking','/api/fast-mode','/api/abort-retry','/api/abort-and-prompt','/api/cycle-thinking','/api/bash','/api/cancel-login','/api/local-models/cancel'].includes(url.pathname)?'mutations':null;if(!key)return api(req,url);const previous=mutations.get(key)||Promise.resolve();const result=previous.catch(()=>{}).then(()=>api(req,url));mutations.set(key,result);try{return await result;}finally{if(mutations.get(key)===result)mutations.delete(key);}}
-const postOnly=new Set(['/api/local-models/context','/api/local-models/backend','/api/approvals-clear','/api/local-models/scan','/api/local-models/folder','/api/local-models/cancel','/api/local-models/download','/api/local-models/start','/api/local-models/stop','/api/capabilities/skill-add','/api/capabilities/skill-state','/api/capabilities/mcp-save','/api/capabilities/mcp-state','/api/capabilities/mcp-test','/api/capabilities/plugin-add','/api/capabilities/plugin-state','/api/capabilities/hook-add','/api/capabilities/hook-state','/api/capabilities/plugin-install','/api/capabilities/plugin-installed','/api/capabilities/marketplace','/api/settings/connection-test','/api/settings/connection','/api/settings/connection-remove','/api/settings/agent','/api/task-state','/api/rename','/api/login','/api/cancel-login','/api/projects','/api/tasks','/api/respond','/api/mode','/api/model','/api/abort','/api/prompt','/api/follow-up','/api/steer','/api/queue-remove','/api/thinking','/api/fast-mode','/api/compact','/api/export','/api/branch','/api/handoff','/api/new-session','/api/abort-retry','/api/cycle-model','/api/todos','/api/share','/api/abort-and-prompt','/api/cycle-thinking','/api/bash']);
+const postOnly=new Set(['/api/local-models/context','/api/local-models/backend','/api/approvals-clear','/api/local-models/scan','/api/local-models/folder','/api/local-models/cancel','/api/local-models/download','/api/local-models/start','/api/local-models/stop','/api/capabilities/skill-add','/api/capabilities/skill-state','/api/capabilities/mcp-save','/api/capabilities/mcp-state','/api/capabilities/mcp-test','/api/capabilities/mcp-login','/api/capabilities/mcp-login-status','/api/capabilities/mcp-login-cancel','/api/capabilities/mcp-logout','/api/capabilities/mcp-convert-remote','/api/capabilities/plugin-add','/api/capabilities/plugin-state','/api/capabilities/hook-add','/api/capabilities/hook-state','/api/capabilities/plugin-install','/api/capabilities/plugin-installed','/api/capabilities/marketplace','/api/settings/connection-test','/api/settings/connection','/api/settings/connection-remove','/api/settings/agent','/api/task-state','/api/rename','/api/login','/api/cancel-login','/api/projects','/api/tasks','/api/respond','/api/mode','/api/model','/api/abort','/api/prompt','/api/follow-up','/api/steer','/api/queue-remove','/api/thinking','/api/fast-mode','/api/compact','/api/export','/api/branch','/api/handoff','/api/new-session','/api/abort-retry','/api/cycle-model','/api/todos','/api/share','/api/abort-and-prompt','/api/cycle-thinking','/api/bash']);
 const eitherRoutes=new Set(['/api/worktrees','/api/rules','/api/desktop-settings']);
 const postRoutes=postOnly;
 const server=http.createServer(async(req,res)=>{const json=(status,value)=>{res.writeHead(status,{'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store'});res.end(JSON.stringify(value));};try{

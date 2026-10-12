@@ -14,7 +14,7 @@ Das Setup ist nicht signiert; SmartScreen kann beim ersten Start warnen. Bisheri
 
 ## GitHub-Download
 
-[Windows-Vorabversion 0.3.0](https://github.com/LiLoLama/pi-desk/releases/tag/windows-v0.3.0): ZIP für x64 mit startbarer EXE, ohne Setup und ohne automatische Updates. Die nächste Version 0.4.0 folgt als Setup mit automatischen Updates; bisherige ZIP-Nutzer installieren sie einmalig manuell.
+[Windows-Vorabversion 0.4.0](https://github.com/LiLoLama/pi-desk/releases/tag/windows-v0.4.0): Setup für x64 mit automatischen Updates. Bisherige ZIP-Nutzer installieren es einmalig manuell; danach aktualisiert sich Pi Desk selbst.
 
 ## Funktionen
 

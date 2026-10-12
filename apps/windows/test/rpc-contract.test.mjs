@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {applyMessageFrame,combinedQueue,deferredMcpNames,normalizeQueuedMessages,promptLifecycle} from '../rpc-contract.mjs';
+import {applyMessageFrame,combinedQueue,deferredMcpNames,normalizeQueuedMessages,promptLifecycle,reloadable} from '../rpc-contract.mjs';
 
 test('OMP 18.4 RPC message identity, queue and lifecycle stay coherent',()=>{
  const messages=[],indexes=new Map();
@@ -21,4 +21,13 @@ test('deferred MCP routes survive old and OMP 18.4 prompt prose',()=>{
   '- "proof" → `xd://mcp__fixture_proof` — Return proof.'
  ]});
  assert.deepEqual(new Set(names),new Set(['mcp__dump_tool','mcp__old_proof','mcp__fixture_proof']));
+});
+
+test('reloadable only when nothing is running, pending or queued',()=>{
+  const idle=()=>({busy:false,pending:new Map(),queuedPayloads:new Map(),queue:[]});
+  assert.equal(reloadable(idle()),true);
+  assert.equal(reloadable({...idle(),busy:true}),false);
+  assert.equal(reloadable({...idle(),pending:new Map([[1,{}]])}),false);
+  assert.equal(reloadable({...idle(),queue:[{id:'a'}]}),false);
+  assert.equal(reloadable({...idle(),queuedPayloads:new Map([['a',{}]])}),false);
 });

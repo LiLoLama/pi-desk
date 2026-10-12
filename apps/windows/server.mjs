@@ -10,7 +10,7 @@ import {promisify} from 'node:util';
 const exec=promisify(execFile);
 import {randomBytes,randomUUID} from 'node:crypto';
 import {Rpc} from './rpc.mjs';
-import {applyMessageFrame,combinedQueue,deferredMcpNames,normalizeQueuedMessages,promptLifecycle} from './rpc-contract.mjs';
+import {applyMessageFrame,combinedQueue,deferredMcpNames,normalizeQueuedMessages,promptLifecycle,reloadable} from './rpc-contract.mjs';
 import {SettingsStore} from './settings.mjs';
 import {LocalModels,searchCatalog,catalogFiles} from './local-models.mjs';
 import {Capabilities} from './capabilities.mjs';
@@ -47,8 +47,8 @@ function snapshot(){return {projects:db.projects,tasks:db.tasks.map(t=>({...t,bu
 // MCP logins reach OMP only on its next start: idle workers restart now, busy ones once their work is done.
 function reloadForMcp(){for(const w of workers.values())w.reloadWhenIdle=true;if(authWorker)authWorker.reloadWhenIdle=true;changed();}
 function reloadIdle(){let closed=false;
-for(const [id,w] of workers)if(w.reloadWhenIdle&&!w.busy&&!w.pending.size){w.intentional=true;workers.delete(id);w.rpc.close().catch(()=>{});closed=true;}
-if(authWorker?.reloadWhenIdle&&!authWorker.busy&&!authWorker.pending.size){const w=authWorker;authWorker=null;w.intentional=true;w.rpc.close().catch(()=>{});closed=true;}
+for(const [id,w] of workers)if(w.reloadWhenIdle&&reloadable(w)){w.intentional=true;workers.delete(id);w.rpc.close().catch(()=>{});closed=true;}
+if(authWorker?.reloadWhenIdle&&reloadable(authWorker)){const w=authWorker;authWorker=null;w.intentional=true;w.rpc.close().catch(()=>{});closed=true;}
 if(closed)broadcast({type:'settings_updated'});}
 function changed(){reloadIdle();broadcast({type:'state',data:snapshot()});}
 let mcpLogin=null;

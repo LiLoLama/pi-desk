@@ -25,3 +25,6 @@ export function queueFromSnapshot(previous,snapshot,makeId){
 export function rpcStateBusy(state){
  return state?.isSettled===false||state?.isStreaming===true||state?.hasPendingAsyncWork===true;
 }
+
+// Must match idle() in server.mjs: nothing running, pending or queued.
+export function reloadable(w){return !w.busy&&!w.pending?.size&&!w.queue?.length;}

@@ -26,3 +26,6 @@ export function deferredMcpNames(state){
  const prompt=Array.isArray(state?.systemPrompt)?state.systemPrompt.join('\n'):String(state?.systemPrompt||'');
  for(const match of prompt.matchAll(/(?:^|\s|`)xd:\/\/(mcp__[A-Za-z0-9_-]+)(?=`|\s|$)/gm))names.add(match[1]);return [...names];
 }
+
+// Must match idle() in server.mjs: nothing running, pending or queued.
+export function reloadable(w){return !w.busy&&!w.pending?.size&&!w.queuedPayloads?.size&&!w.queue?.length;}

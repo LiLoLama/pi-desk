@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {syncRpcMessage,queueFromSnapshot,rpcStateBusy} from '../rpc-contract.mjs';
+import {syncRpcMessage,queueFromSnapshot,rpcStateBusy,reloadable} from '../rpc-contract.mjs';
 
 test('RPC messageId keeps interleaved same-role messages distinct',()=>{
  const messages=[],ids=new Map();
@@ -18,4 +18,11 @@ test('OMP queue snapshots preserve ids and settled state includes async work',()
  assert.equal(rpcStateBusy({isSettled:true,isStreaming:false,hasPendingAsyncWork:false}),false);
  assert.equal(rpcStateBusy({isSettled:false,isStreaming:false,hasPendingAsyncWork:false}),true);
  assert.equal(rpcStateBusy({isSettled:true,isStreaming:false,hasPendingAsyncWork:true}),true);
+});
+
+test('reloadable only when nothing is running, pending or queued',()=>{
+  assert.equal(reloadable({busy:false,pending:new Map(),queue:[]}),true);
+  assert.equal(reloadable({busy:true,pending:new Map(),queue:[]}),false);
+  assert.equal(reloadable({busy:false,pending:new Map([[1,{}]]),queue:[]}),false);
+  assert.equal(reloadable({busy:false,pending:new Map(),queue:[{id:'a'}]}),false);
 });

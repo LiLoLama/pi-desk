@@ -3,6 +3,17 @@
   <channel>
     <title>Pi Desk für macOS</title>
     <item>
+      <title>Pi Desk 0.3.1</title>
+      <pubDate>Mon, 12 Oct 2026 08:55:52 GMT</pubDate>
+      <sparkle:version>301</sparkle:version>
+      <sparkle:shortVersionString>0.3.1</sparkle:shortVersionString>
+      <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+      <description><![CDATA[## 0.3.1 – 12.10.2026
+
+- Wurde ein Projektordner verschoben oder umbenannt, nennt Pi Desk jetzt den fehlenden Ordner statt nur „OMP beendet“.]]></description>
+      <enclosure url="https://github.com/LiLoLama/pi-desk/releases/download/macos-v0.3.1/Pi-Desk-0.3.1-apple-silicon.dmg" length="156228941" type="application/octet-stream" sparkle:edSignature="nXHGR18obhC0L3BmQFgCZlE8BTO1qU0Up7Z9huOrnKib8/IWIT88Wa0lcekpxfHRKhLJq4PtzzIijPM94zeFBA=="/>
+    </item>
+    <item>
       <title>Pi Desk 0.3.0</title>
       <pubDate>Fri, 09 Oct 2026 12:05:40 GMT</pubDate>
       <sparkle:version>300</sparkle:version>

@@ -1,5 +1,10 @@
 # Pi Desk für macOS – Änderungen
 
+## 0.4.0 – 12.10.2026
+
+- Nach Updates mit größeren Neuerungen zeigt Pi Desk beim ersten Start einmal, was neu ist. Reine Fehlerbehebungen bleiben still.
+- „Was ist neu“ zeigt den Changelog jederzeit: in den Einstellungen unter „Updates“ und im Menü.
+
 ## 0.3.1 – 12.10.2026
 
 - Wurde ein Projektordner verschoben oder umbenannt, nennt Pi Desk jetzt den fehlenden Ordner statt nur „OMP beendet“.

@@ -1,5 +1,10 @@
 # Pi Desk für Windows – Änderungen
 
+## 0.5.0 – 12.10.2026
+
+- Nach Updates mit größeren Neuerungen zeigt Pi Desk beim ersten Start einmal, was neu ist. Reine Fehlerbehebungen bleiben still.
+- „Was ist neu“ zeigt den Changelog jederzeit: in den Einstellungen unter „Updates“ und im Menü.
+
 ## 0.4.0 – 12.10.2026
 
 - Pi Desk sucht jetzt selbst nach Updates und zeigt vor dem Aktualisieren, was neu ist.

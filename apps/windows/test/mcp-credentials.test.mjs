@@ -14,9 +14,9 @@ test('status is expired when OMP disabled every row, remove deletes all rows of 
  const db=new DatabaseSync(path.join(d,'agent.db'));db.prepare("UPDATE auth_credentials SET disabled_cause='refresh failed' WHERE provider=?").run(credentialKey(url));db.close();
  assert.equal(c.status(url),'expired');c.remove(url);assert.equal(c.status(url),'none');assert.equal(c.status('https://other/mcp'),'signed-in');
 }finally{await rm(d,{recursive:true,force:true});}});
-test('without agent.db status is none and nothing else breaks',async()=>{const d=await dir(null);try{const c=new McpCredentials(d);assert.equal(c.exists(),false);assert.equal(c.status(url),'none');c.remove(url);assert.equal(c.snapshot(d),false);}finally{await rm(d,{recursive:true,force:true});}});
+test('without agent.db status is none and nothing else breaks',async()=>{const d=await dir(null);try{const c=new McpCredentials(d);assert.equal(c.exists(),false);assert.equal(c.status(url),'none');c.remove(url);assert.equal(c.snapshot(d,url),false);}finally{await rm(d,{recursive:true,force:true});}});
 test('another schema version is refused before writing',async()=>{const d=await dir(9);try{const c=new McpCredentials(d);assert.throws(()=>c.save(url,credential),StorageMismatch);assert.throws(()=>c.save(url,credential),/speichert Anmeldungen anders/);assert.equal(rows(d).length,0);}finally{await rm(d,{recursive:true,force:true});}});
-test('snapshot copies the database for the connection test',async()=>{const d=await dir(8);const t=await mkdtemp(path.join(os.tmpdir(),'pi-snap-'));try{const c=new McpCredentials(d);c.save(url,credential);assert.equal(c.snapshot(t),true);assert.equal(new McpCredentials(t).status(url),'signed-in');}finally{await rm(d,{recursive:true,force:true});await rm(t,{recursive:true,force:true});}});
+test('snapshot copies the database for the connection test',async()=>{const d=await dir(8);const t=await mkdtemp(path.join(os.tmpdir(),'pi-snap-'));try{const c=new McpCredentials(d);c.save(url,credential);assert.equal(c.snapshot(t,url),true);assert.equal(new McpCredentials(t).status(url),'signed-in');}finally{await rm(d,{recursive:true,force:true});await rm(t,{recursive:true,force:true});}});
 test('save without agent.db throws MissingStore and creates no file',async()=>{const d=await dir(null);try{const c=new McpCredentials(d);assert.throws(()=>c.save(url,credential),MissingStore);assert.equal(c.exists(),false);}finally{await rm(d,{recursive:true,force:true});}});
 test('active returns the data of the active row, null otherwise and never throws',async()=>{const d=await dir(null);try{
  const c=new McpCredentials(d);assert.equal(c.active(url),null);
@@ -25,3 +25,9 @@ test('active returns the data of the active row, null otherwise and never throws
  c.save(url,{...credential,refresh:'r2'});assert.equal(JSON.parse(c.active(url)).refresh,'r2');
  const db=new DatabaseSync(path.join(d,'agent.db'));db.prepare("UPDATE auth_credentials SET disabled_cause='refresh failed' WHERE provider=?").run(credentialKey(url));db.close();assert.equal(c.active(url),null);
 }finally{await rm(d,{recursive:true,force:true});}});
+test('snapshot copies only the credentials of the tested URL, never other providers',async()=>{const d=await dir(8);const t=await mkdtemp(path.join(os.tmpdir(),'pi-snap-'));try{
+ const c=new McpCredentials(d);c.save(url,credential);c.save(url,{...credential,access:'a2'});c.save('https://other/mcp',credential);
+ const db=new DatabaseSync(path.join(d,'agent.db'));db.prepare("INSERT INTO auth_credentials (provider, credential_type, data) VALUES ('anthropic','oauth','{\"refresh\":\"geheim\"}')").run();db.close();
+ assert.equal(c.snapshot(t,url),true);const r=rows(t);assert.ok(r.length>=1&&r.every(x=>x.provider===credentialKey(url)));assert.equal(r.length,2);
+ assert.equal(new McpCredentials(t).status(url),'signed-in');assert.equal(new McpCredentials(t).status('https://other/mcp'),'none');assert.equal(rows(d).length,4);
+}finally{await rm(d,{recursive:true,force:true});await rm(t,{recursive:true,force:true});}});

@@ -1,5 +1,5 @@
 // MCP OAuth credentials in OMP's own store (agent.db, auth_credentials, schema 8). OMP looks rows up by server URL and refreshes them itself.
-import {DatabaseSync} from 'node:sqlite';import {existsSync} from 'node:fs';import path from 'node:path';
+import {DatabaseSync} from 'node:sqlite';import {existsSync,rmSync} from 'node:fs';import path from 'node:path';
 export const SCHEMA_VERSION=8;
 export const credentialKey=url=>`mcp_oauth:profile:${process.env.OMP_PROFILE||'default'}:${url}`;
 export class StorageMismatch extends Error{constructor(){super('Diese OMP-Version speichert Anmeldungen anders. Bitte Pi Desk aktualisieren.');}}
@@ -34,5 +34,8 @@ export class McpCredentials{
   }finally{db.close();}
  }
  remove(url){if(!this.exists())return;const db=this.#open();try{this.#check(db);db.prepare('DELETE FROM auth_credentials WHERE provider=?').run(credentialKey(url));}finally{db.close();}}
- snapshot(targetDir){if(!this.exists())return false;const db=this.#open();try{db.prepare('VACUUM INTO ?').run(path.join(targetDir,'agent.db'));return true;}finally{db.close();}}
+ // Copy for the throwaway test OMP: only this URL's rows, so provider tokens are neither exposed nor rotated (and lost) there.
+ snapshot(targetDir,url){if(!this.exists())return false;const file=path.join(targetDir,'agent.db'),db=this.#open();
+  try{db.prepare('VACUUM INTO ?').run(file);}finally{db.close();}
+  const copy=new DatabaseSync(file);try{copy.prepare('DELETE FROM auth_credentials WHERE provider<>?').run(credentialKey(url));}catch(e){copy.close();rmSync(file,{force:true});throw e;}copy.close();return true;}
 }

@@ -25,7 +25,7 @@ test('MCP secrets stay private, changed targets require explicit secrets, other 
  assert.throws(()=>mcpConfig({type:'stdio',command:'node',args:'invalid'}),/Argumente/);
  }finally{await rm(root,{recursive:true,force:true});}
 });
-import {McpCredentials} from '../mcp-credentials.mjs';import {ompSchema} from './omp-schema.mjs';import {oauthFixture,browser} from './oauth-fixture.mjs';
+import {DatabaseSync} from 'node:sqlite';import {McpCredentials} from '../mcp-credentials.mjs';import {ompSchema} from './omp-schema.mjs';import {oauthFixture,browser} from './oauth-fixture.mjs';
 test('advanced login settings are validated, kept private and survive edits',async()=>{
  const root=await mkdtemp(path.join(os.tmpdir(),'pi-mcp-oauth-'));try{
  await mkdir(path.join(root,'agent'));const c=new Capabilities(root);await c.init();
@@ -54,7 +54,7 @@ test('login stores the credential under the normalized URL; logout, URL change a
 });
 test('mcp-remote is recognized and converted to HTTP with headers',async()=>{
  assert.deepEqual(remoteTarget({command:'npx',args:['-y','mcp-remote','https://example.com/mcp']}),{url:'https://example.com/mcp',headers:{},dropped:[]});
- assert.deepEqual(remoteTarget({command:'C:\\Program Files\\nodejs\\npx.cmd',args:['mcp-remote@0.1.29','https://example.com/mcp','--header','Authorization: Bearer x','--transport','http-only']}),{url:'https://example.com/mcp',headers:{Authorization:'Bearer x'},dropped:['--transport','http-only']});
+ assert.deepEqual(remoteTarget({command:'C:\\Program Files\\nodejs\\npx.cmd',args:['mcp-remote@0.1.29','https://example.com/mcp','--header','X-Key: k','--transport','http-only']}),{url:'https://example.com/mcp',headers:{'X-Key':'k'},dropped:['--transport','http-only']});
  assert.deepEqual(remoteTarget({command:'/usr/local/bin/mcp-remote',args:['https://example.com/mcp']}),{url:'https://example.com/mcp',headers:{},dropped:[]});
  assert.equal(remoteTarget({command:'pnpm',args:['mcp-remote','https://example.com/mcp']}),null);
  assert.ok(remoteTarget({command:'pnpm',args:['dlx','mcp-remote','https://example.com/mcp']}));
@@ -89,10 +89,31 @@ test('adoptRefreshed copies a rotated credential from the probe copy back, but o
  const root=await mkdtemp(path.join(os.tmpdir(),'pi-mcp-sync-'));try{
  const url='https://example.com/mcp',cred={access:'a',refresh:'r1'};await mkdir(path.join(root,'agent'));await mkdir(path.join(root,'probe'));
  ompSchema(path.join(root,'agent/agent.db'));const c=new Capabilities(root);await c.init();c.credentials.save(url,cred);
- const before=c.credentials.active(url);assert.ok(c.credentials.snapshot(path.join(root,'probe')));
+ const before=c.credentials.active(url);assert.ok(c.credentials.snapshot(path.join(root,'probe'),url));
  c.adoptRefreshed(url,path.join(root,'probe'),before);assert.deepEqual(JSON.parse(c.credentials.active(url)),cred);
  new McpCredentials(path.join(root,'probe')).save(url,{access:'b',refresh:'r2'});
  c.adoptRefreshed(url,path.join(root,'probe'),before);assert.deepEqual(JSON.parse(c.credentials.active(url)),{access:'b',refresh:'r2'});
  c.adoptRefreshed(url,path.join(root,'nichtda'),c.credentials.active(url));c.adoptRefreshed(url,path.join(root,'probe'),null);
+ }finally{await rm(root,{recursive:true,force:true});}
+});
+
+test('remoteTarget keeps an Authorization header out of headers and reports it as dropped',()=>{
+ assert.deepEqual(remoteTarget({command:'npx',args:['-y','mcp-remote','https://example.com/mcp','--header','Authorization: Bearer x','--header','X-Key: k']}),{url:'https://example.com/mcp',headers:{'X-Key':'k'},dropped:['--header','Authorization: Bearer x']});
+ assert.deepEqual(remoteTarget({command:'npx',args:['-y','mcp-remote','https://example.com/mcp','--header','authorization:${AUTH}','--header','X-Key: k']}),{url:'https://example.com/mcp',headers:{'X-Key':'k'},dropped:['--header','authorization:${AUTH}']});
+});
+test('an own Authorization header or a non-oauth auth block blocks the login',async()=>{
+ const root=await mkdtemp(path.join(os.tmpdir(),'pi-mcp-block-'));try{
+ await mkdir(path.join(root,'agent'));const c=new Capabilities(root);await c.init();
+ await writeFile(c.mcpFile,JSON.stringify({mcpServers:{hdr:{type:'http',url:'https://example.com/a',headers:{authorization:'Bearer x'}},key:{type:'sse',url:'https://example.com/b',auth:{type:'apikey',credentialId:'x'}},ok:{type:'http',url:'https://example.com/c',headers:{'X-Key':'k'},auth:{type:'oauth'}},cli:{command:'node',args:[]}}}));
+ const by=Object.fromEntries((await c.servers()).map(s=>[s.name,s]));assert.equal(by.hdr.login,'blocked');assert.equal(by.key.login,'blocked');assert.equal(by.ok.login,'none');assert.equal(by.cli.login,undefined);
+ await assert.rejects(c.login('hdr'),/eigenen Authorization-Header oder eine andere Anmeldeart/);await assert.rejects(c.login('key'),/Entferne ihn unter „Header und Umgebungsvariablen“/);
+ }finally{await rm(root,{recursive:true,force:true});}
+});
+test('a revoked login (authRequired) is shown as required although a credential is saved',async()=>{
+ const root=await mkdtemp(path.join(os.tmpdir(),'pi-mcp-revoked-'));try{
+ await mkdir(path.join(root,'agent'));ompSchema(path.join(root,'agent/agent.db'));const c=new Capabilities(root);await c.init();const url='https://example.com/mcp';
+ await c.saveServer({name:'app',config:{type:'http',url}});c.credentials.save(url,{access:'a',refresh:'r'});assert.equal((await c.servers())[0].login,'signed-in');
+ c.authRequired.add(url);assert.equal((await c.servers())[0].login,'required');
+ new DatabaseSync(path.join(root,'agent/agent.db')).exec("UPDATE auth_credentials SET disabled_cause='refresh failed'");assert.equal((await c.servers())[0].login,'expired');
  }finally{await rm(root,{recursive:true,force:true});}
 });

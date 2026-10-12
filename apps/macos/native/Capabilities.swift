@@ -78,7 +78,11 @@ struct CapabilitySettingsView: View {
           (result["message"] as? String ?? "Verbunden") + "\n\n"
           + (result["tools"] as? [String] ?? []).joined(separator: "\n")
         previewOpen = true
-      } catch { self.error = error.localizedDescription }
+      } catch {
+        // A failed test can flag "login required"; reload so the list shows it right away.
+        await load()
+        self.error = error.localizedDescription
+      }
       working = false
     }
   }
@@ -87,6 +91,7 @@ struct CapabilitySettingsView: View {
     case "signed-in": "Angemeldet"
     case "expired": "Anmeldung abgelaufen"
     case "required": "Anmeldung erforderlich"
+    case "blocked": "Eigener Authorization-Header aktiv"
     default: nil
     }
   }
@@ -243,7 +248,7 @@ struct CapabilitySettingsView: View {
                   }
                 }
                 if !skillsMode { Button("Verbindung testen") { test(name) } }
-                if !skillsMode, let state = row["login"] as? String {
+                if !skillsMode, let state = row["login"] as? String, state != "blocked" {
                   if state == "signed-in" {
                     Button("Abmelden") { mutate("mcp-logout", ["name": name]) }
                   } else {

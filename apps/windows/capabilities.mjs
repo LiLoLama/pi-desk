@@ -27,6 +27,7 @@ function oauthConfig(raw,old,changed){
  else if(!raw.clearSecret&&old?.clientSecret){if(changed)throw Error('Ziel geändert: Client-Geheimnis neu eingeben oder ausdrücklich entfernen.');o.clientSecret=old.clientSecret;}
  return Object.keys(o).length?o:undefined;
 }
+// An Authorization header is not carried over: OMP then skips its stored OAuth login for that server.
 // mcp-remote proxies OAuth on its own (tokens in ~/.mcp-auth); its URL can move to a managed HTTP entry instead.
 export function remoteTarget(c){
  if(!object(c)||(c.type&&c.type!=='stdio'))return null;
@@ -36,7 +37,7 @@ export function remoteTarget(c){
  else return null;
  const rest=args.slice(start),at=rest.findIndex(a=>/^https?:\/\//i.test(a));if(at<0)return null;
  const headers={},dropped=[];
- for(let i=0;i<rest.length;i++){if(i===at)continue;if(rest[i]==='--header'&&i+1<rest.length){const h=rest[++i],m=h.match(/^([^:\s]+)\s*:\s*(.*)$/);if(m)headers[m[1]]=m[2];else dropped.push('--header',h);}else dropped.push(rest[i]);}
+ for(let i=0;i<rest.length;i++){if(i===at)continue;if(rest[i]==='--header'&&i+1<rest.length){const h=rest[++i],m=h.match(/^([^:\s]+)\s*:\s*(.*)$/);if(m&&!/^authorization$/i.test(m[1]))headers[m[1]]=m[2];else dropped.push('--header',h);}else dropped.push(rest[i]);}
  return {url:rest[at],headers,dropped};
 }
 export function mcpConfig(raw,old){
@@ -76,11 +77,13 @@ export class Capabilities {
  async preview(id){const s=this.state.skills.find(x=>x.id===id);if(!s)throw Error('Skill nicht gefunden.');return skillInfo(s.path);}
  async skillPolicy(){const active=(await this.skills()).filter(s=>s.enabled&&!s.error);return {enabled:!!active.length,enableSkillCommands:true,customDirectories:active.map(s=>path.join(this.data,'skill-links',s.id)),includeSkills:active.length?active.map(s=>s.name):['pi-desk-no-skills-selected'],enableCodexUser:false,enableClaudeUser:false,enableClaudeProject:false,enablePiUser:false,enablePiProject:false,enableAgentsUser:false,enableAgentsProject:false};}
  async mcpDocument(){const doc=await readJSON(this.mcpFile,{mcpServers:{}});if(!object(doc)||!object(doc.mcpServers))throw Error('mcp.json enthält keine gültige Server-Zuordnung.');return doc;}
- #login(c){if(!['http','sse'].includes(c.type))return undefined;const s=this.credentials.status(c.url);return s==='none'&&this.authRequired.has(c.url)?'required':s;}
+ // OMP ignores the stored login when the entry sets its own Authorization header or a non-oauth auth block.
+ static blocked(c){return Object.keys(c.headers||{}).some(k=>k.toLowerCase()==='authorization')||(!!c.auth&&c.auth.type!=='oauth');}
+ #login(c){if(!['http','sse'].includes(c.type))return undefined;if(Capabilities.blocked(c))return 'blocked';const s=this.credentials.status(c.url);return ['none','signed-in'].includes(s)&&this.authRequired.has(c.url)?'required':s;}
  async servers(){const doc=await this.mcpDocument();return Object.entries(doc.mcpServers).map(([name,c])=>{const remote=remoteTarget(c);return {name,type:c.type||'stdio',command:c.command||'',args:c.args||[],cwd:c.cwd||'',url:c.url||'',enabled:c.enabled!==false&&!(doc.disabledServers||[]).includes(name),envKeys:Object.keys(c.env||{}),headerKeys:Object.keys(c.headers||{}),hasOAuth:!!(c.oauth||c.auth),login:this.#login(c),oauth:{clientId:c.oauth?.clientId||'',scope:c.oauth?.scope||'',callbackPort:c.oauth?.callbackPort||null,hasClientSecret:!!c.oauth?.clientSecret},remote:remote?{url:remote.url,dropped:remote.dropped}:null};});}
  // Best effort: a changed or removed server must not leave its tokens behind, but a foreign OMP store must not block the edit.
  #forget(url){if(!url)return;this.authRequired.delete(url);try{this.credentials.remove(url);}catch{}}
- async login(name,hooks={}){const c=(await this.mcpDocument()).mcpServers[name];if(!c)throw Error('MCP-Server nicht gefunden.');if(!['http','sse'].includes(c.type))throw Error('Anmelden ist nur für HTTP- und SSE-Server möglich.');
+ async login(name,hooks={}){const c=(await this.mcpDocument()).mcpServers[name];if(!c)throw Error('MCP-Server nicht gefunden.');if(!['http','sse'].includes(c.type))throw Error('Anmelden ist nur für HTTP- und SSE-Server möglich.');if(Capabilities.blocked(c))throw Error('Dieser Server hat einen eigenen Authorization-Header oder eine andere Anmeldeart. Entferne ihn unter „Header und Umgebungsvariablen“, damit die Pi-Desk-Anmeldung greift.');
  const credential=await oauthLogin({url:c.url,type:c.type,headers:c.headers||{},oauth:c.oauth||{}},hooks);this.credentials.save(c.url,credential);this.authRequired.delete(c.url);return this.servers();}
  async logout(name){const c=(await this.mcpDocument()).mcpServers[name];if(!c?.url)throw Error('MCP-Server nicht gefunden.');this.credentials.remove(c.url);this.authRequired.delete(c.url);return this.servers();}
  async convertRemote(name){const doc=await this.mcpDocument(),c=doc.mcpServers[name],t=remoteTarget(c);if(!t)throw Error('Dieser Server nutzt kein mcp-remote.');
@@ -105,7 +108,7 @@ export class Capabilities {
  const root=await mkdtemp(path.join(this.data,'mcp-probe-'));let rpc,snapshot=false,before=null;
  try{
  await mkdir(path.join(root,'agent'));await atomic(path.join(root,'agent/mcp.json'),{mcpServers:{[name]:{...config,enabled:true}}});
- if(config.url){try{before=this.credentials.active(config.url);snapshot=this.credentials.snapshot(path.join(root,'agent'));}catch{snapshot=false;}}
+ if(config.url){try{before=this.credentials.active(config.url);snapshot=this.credentials.snapshot(path.join(root,'agent'),config.url);}catch{snapshot=false;}}
  await atomic(path.join(root,'policy.json'),{mcp:{enableProjectConfig:false},enabledProviders:[],extensions:[]});
  rpc=new Rpc(binary,['--mode','rpc-ui','--model=anthropic/claude-sonnet-4-5',`--cwd=${root}`,`--config=${path.join(root,'policy.json')}`,'--no-session','--no-title','--no-extensions','--no-skills','--no-rules','--no-lsp','--tools=read'],{...env,PI_CODING_AGENT_DIR:path.join(root,'agent')});onRpc?.(rpc);
  let output='';rpc.on('frame',f=>{if(f.type==='command_output')output+=(f.text??f.message??'')+'\n';});

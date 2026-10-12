@@ -14,7 +14,7 @@ test('login routes: one session at a time, status until done, logout',async()=>{
   assert.equal((await api('capabilities/mcp-login-status',{id:first.id})).state,'waiting');
   await browser(first.url);let st;for(let i=0;i<50;i++){st=await api('capabilities/mcp-login-status',{id:first.id});if(st.state!=='waiting')break;await new Promise(r=>setTimeout(r,100));}
   assert.equal(st.state,'done');assert.equal((await api('capabilities')).servers[0].login,'signed-in');
-  const second=await api('capabilities/mcp-login',{name:'aiti'});assert.notEqual(second.id,first.id);await api('capabilities/mcp-login-cancel',{id:second.id});
+  const second=await api('capabilities/mcp-login',{name:'aiti'});assert.notEqual(second.id,first.id);await api('capabilities/mcp-login-cancel',{id:second.id});assert.equal((await api('capabilities/mcp-login-status',{id:second.id})).state,'cancelled');
   for(let i=0;i<50;i++){st=await api('capabilities/mcp-login-status',{id:second.id});if(st.state!=='waiting')break;await new Promise(r=>setTimeout(r,100));}assert.equal(st.state,'cancelled');
   assert.equal((await api('capabilities/mcp-logout',{name:'aiti'})).servers[0].login,'none');
  }finally{await new Promise(r=>{if(server.exitCode!==null)return r();server.once('exit',r);server.kill('SIGTERM');});await f.close();await rm(tmp,{recursive:true,force:true});}

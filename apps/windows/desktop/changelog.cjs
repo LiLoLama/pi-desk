@@ -9,4 +9,14 @@ function compareVersions(a,b){const left=String(a).split('.').map(Number),right=
 const sectionsNewerThan=(entries,installed)=>entries.filter(e=>compareVersions(e.version,installed)>0).sort((a,b)=>compareVersions(b.version,a.version));
 const renderNotes=entries=>entries.map(e=>`## ${e.version}${e.date?` – ${e.date}`:''}\n\n${e.body}`).join('\n\n');
 function section(text,version){const entry=parseChangelog(text).find(e=>e.version===version);if(!entry?.body)throw Error(`CHANGELOG.md enthält keinen Abschnitt für ${version}.`);return entry;}
-module.exports={parseChangelog,compareVersions,sectionsNewerThan,renderNotes,section};
+const VERSION=/^\d+\.\d+\.\d+$/;
+const minorOf=v=>String(v).split('.').slice(0,2).join('.');
+// "Neu in dieser Version": shown once when major or minor grew since the last seen version; remember is saved before showing.
+function whatsNew(text,seen,installed){
+ const quiet={show:false,notes:'',remember:installed};
+ if(typeof seen!=='string'||!VERSION.test(seen)||compareVersions(installed,seen)<=0||minorOf(installed)===minorOf(seen))return quiet;
+ const entries=parseChangelog(text).filter(e=>compareVersions(e.version,seen)>0&&compareVersions(e.version,installed)<=0).sort((a,b)=>compareVersions(b.version,a.version));
+ return entries.length?{show:true,notes:renderNotes(entries),remember:installed}:quiet;
+}
+const recentNotes=(text,installed,limit=10)=>renderNotes(parseChangelog(text).filter(e=>compareVersions(e.version,installed)<=0).sort((a,b)=>compareVersions(b.version,a.version)).slice(0,limit));
+module.exports={parseChangelog,compareVersions,sectionsNewerThan,renderNotes,section,whatsNew,recentNotes};

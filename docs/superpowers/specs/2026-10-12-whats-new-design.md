@@ -66,7 +66,7 @@ whatsNew(changelog, seen, installed) → { show: bool, notes: string, remember: 
 ## 3. macOS
 
 - `native/build.py` kopiert `CHANGELOG.md` nach `Contents/Resources/CHANGELOG.md`.
-- Ein neuer `WhatsNew`-Teil in `native/Updates.swift` liest die Datei, wendet die Regel an, speichert die Version und zeigt bei Bedarf ein eigenes Fenster im Stil des Update-Fensters: Quiet Studio Dark, `ChatMarkdown`, 520 pt breit. Das Fenster ist vom Update-Fenster getrennt, damit sich beide nicht gegenseitig ersetzen.
+- Eine neue Datei `native/WhatsNew.swift` (in `build.py` unter `sources` eingetragen) liest die Datei, wendet die Regel an, speichert die Version und zeigt bei Bedarf ein eigenes Fenster im Stil des Update-Fensters: Quiet Studio Dark, `ChatMarkdown`, 520 pt breit. Das Fenster ist vom Update-Fenster getrennt, damit sich beide nicht gegenseitig ersetzen.
 - `AppUpdates` hält ein Update-Fenster zurück, solange das Neuigkeiten-Fenster offen ist, und zeigt es nach dem Schließen.
 - Start: direkt nach `AppUpdates.shared.start()` im App-Start, also vor der ersten automatischen Prüfung nach 10 s.
 - `UpdateSettingsView` (in `native/Updates.swift`) bekommt den Knopf „Was ist neu“. Das App-Menü bekommt „Was ist neu …“.
@@ -75,9 +75,9 @@ whatsNew(changelog, seen, installed) → { show: bool, notes: string, remember: 
 ## 4. Windows
 
 - `package.json` → `build.files` nimmt `CHANGELOG.md` auf. Der Hauptprozess liest sie aus dem App-Verzeichnis (`app.getAppPath()`).
-- `desktop/main.cjs` wendet die Regel nach dem Laden des Fensters an, speichert `seenVersion` über den bestehenden `fileStore` und sendet bei Bedarf `pi:whats-new` mit `{version, notes}` an die Oberfläche.
+- `desktop/main.cjs` wendet die Regel vor dem Laden des Fensters an und speichert `seenVersion` über den bestehenden `fileStore`. Die Oberfläche holt das Ergebnis einmalig über `pi:whats-new-pending` ab (`{version, notes}` oder `null`). So kann keine Nachricht verloren gehen, die vor dem Laden der Oberfläche gesendet würde.
 - `desktop/updates.cjs` behält beim Speichern das Feld `seenVersion` bei. Bisher schreibt `persist()` nur `auto`, `skipped` und `lastCheck` und würde es sonst löschen.
-- `desktop/preload.cjs` ergänzt `whatsNew.onShow(callback)` und `whatsNew.open()`. Letzteres liefert die letzten zehn Abschnitte für den Knopf.
+- `desktop/preload.cjs` ergänzt `whatsNew.pending()` und `whatsNew.all()`. Letzteres liefert über `pi:whats-new-all` die letzten zehn Abschnitte für den Knopf und den Menüpunkt „Datei → Was ist neu …“.
 - `public/features.js` zeigt das Fenster als eigenen Dialog mit der vorhandenen, über DOMPurify gefilterten Markdown-Darstellung des Update-Dialogs. Solange er offen ist, wartet `showUpdate` mit automatisch gefundenen Updates bis zum Schließen.
 - Einstellungsseite „Updates“: Knopf „Was ist neu“.
 - Fehlt die Datei oder ist sie nicht lesbar: kein Fenster, nichts gespeichert.
@@ -107,5 +107,5 @@ Keine Änderung am Release-Ablauf. Die Release-Skripte verlangen bereits einen C
 
 ## Dateien
 
-- macOS: `native/UpdateLogic.swift`, `native/Updates.swift`, `native/PiDesk.swift` (Menü, Start), `native/build.py`, `test/update-logic.test.mjs`, `test/update-logic-checks.swift`, `README.md`
+- macOS: `native/UpdateLogic.swift`, `native/WhatsNew.swift` (neu), `native/Updates.swift`, `native/PiDesk.swift` (Menü, Start), `native/build.py`, `test/update-logic.test.mjs`, `test/update-logic-checks.swift`, `README.md`
 - Windows: `desktop/changelog.cjs`, `desktop/updates.cjs`, `desktop/main.cjs`, `desktop/preload.cjs`, `public/features.js`, `package.json`, `test/changelog.test.mjs`, `test/updates.test.mjs`, `README.md`

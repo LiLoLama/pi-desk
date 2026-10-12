@@ -26,6 +26,7 @@ export async function oauthFixture(opt={}){
   }
   if(u.pathname==='/token'){
    const p=Object.fromEntries(new URLSearchParams(body));state.tokenRequests.push(p);
+   if(opt.tokenDelay)await new Promise(r=>setTimeout(r,opt.tokenDelay));
    if(opt.tokenWithoutAccess)return json(200,{token_type:'Bearer'});
    if(p.grant_type==='authorization_code'){const challenge=codes.get(p.code);if(!challenge||createHash('sha256').update(p.code_verifier||'').digest('base64url')!==challenge)return json(400,{error:'invalid_grant'});codes.delete(p.code);}
    else if(p.grant_type!=='refresh_token'||!refreshTokens.has(p.refresh_token))return json(400,{error:'invalid_grant'});

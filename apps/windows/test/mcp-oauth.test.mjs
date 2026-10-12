@@ -49,3 +49,8 @@ test('scope: advanced setting, then challenge, then metadata; resource falls bac
  await withFixture({noResource:true},async f=>{const c=await login({url:f.url,type:'http'},{onUrl:u=>{browser(u);}});assert.equal(f.state.authorizeRequests[0].resource,f.url);assert.equal(c.resource,f.url);});
 });
 test('errors are OAuthError instances',()=>withFixture({noRegistration:true},async f=>{await assert.rejects(login({url:f.url,type:'http'}),e=>e instanceof OAuthError);}));
+test('a cancel during the token exchange rejects and returns no credential',()=>withFixture({tokenDelay:1000},async f=>{
+ const ctl=new AbortController();let credential;
+ const result=login({url:f.url,type:'http'},{signal:ctl.signal,onUrl:u=>{browser(u);(async()=>{while(!f.state.tokenRequests.length)await new Promise(r=>setTimeout(r,5));ctl.abort();})();}}).then(c=>{credential=c;return c;});
+ await assert.rejects(result,e=>e instanceof OAuthError&&/abgebrochen/.test(e.message));assert.equal(credential,undefined);
+}));

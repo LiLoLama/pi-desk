@@ -60,17 +60,20 @@ export async function exchange(tokenUrl,{code,redirectUri,clientId,clientSecret,
  return {access:j.access_token,refresh:typeof j.refresh_token==='string'?j.refresh_token:'',expires:now()+(Number(j.expires_in)>0?Number(j.expires_in):3600)*1000};
 }
 export async function login({url,type='http',headers={},oauth={}},{fetchFn=fetch,signal,onUrl,timeoutMs=LOGIN_TIMEOUT,now=Date.now}={}){
- const ctl=new AbortController();const timer=setTimeout(()=>ctl.abort(new OAuthError('Die Anmeldung wurde nach 5 Minuten ohne Antwort aus dem Browser abgebrochen.')),timeoutMs);
+ const ctl=new AbortController(),stop=ctl.signal;const timer=setTimeout(()=>ctl.abort(new OAuthError('Die Anmeldung wurde nach 5 Minuten ohne Antwort aus dem Browser abgebrochen.')),timeoutMs);
  const cancel=()=>ctl.abort(new OAuthError('Anmeldung abgebrochen.'));if(signal?.aborted)cancel();else signal?.addEventListener('abort',cancel,{once:true});
+ const send=(u,o={})=>fetchFn(u,{...o,signal:o.signal?AbortSignal.any([o.signal,stop]):stop});
  let server;
  try{
-  const ch=await challenge(url,type,headers,fetchFn);const meta=await discover(url,ch,fetchFn);const scope=oauth.scope||ch.scope||meta.scopes;
+  stop.throwIfAborted();
+  const ch=await challenge(url,type,headers,send);const meta=await discover(url,ch,send);const scope=oauth.scope||ch.scope||meta.scopes;stop.throwIfAborted();
   server=await listen(oauth.callbackPort||0);const redirectUri=`http://127.0.0.1:${server.address().port}/callback`;
-  const client=oauth.clientId?{clientId:oauth.clientId,clientSecret:oauth.clientSecret||undefined}:await register(meta.registrationUrl,redirectUri,scope,fetchFn);
+  const client=oauth.clientId?{clientId:oauth.clientId,clientSecret:oauth.clientSecret||undefined}:await register(meta.registrationUrl,redirectUri,scope,send);stop.throwIfAborted();
   const verifier=randomBytes(32).toString('base64url'),state=randomBytes(16).toString('hex');
-  const code=waitForCode(server,state,ctl.signal);
+  const code=waitForCode(server,state,stop);
   onUrl?.(authorizeUrl(meta.authorizationUrl,{clientId:client.clientId,redirectUri,challenge:createHash('sha256').update(verifier).digest('base64url'),state,scope,resource:meta.resource}));
-  const tokens=await exchange(meta.tokenUrl,{code:await code,redirectUri,clientId:client.clientId,clientSecret:client.clientSecret,verifier,resource:meta.resource},fetchFn,now);
+  const tokens=await exchange(meta.tokenUrl,{code:await code,redirectUri,clientId:client.clientId,clientSecret:client.clientSecret,verifier,resource:meta.resource},send,now);stop.throwIfAborted();
   return {...tokens,tokenUrl:meta.tokenUrl,clientId:client.clientId,...(client.clientSecret?{clientSecret:client.clientSecret}:{}),resource:meta.resource,authorizationUrl:meta.authorizationUrl};
- }finally{clearTimeout(timer);signal?.removeEventListener('abort',cancel);if(server){server.closeAllConnections();await new Promise(r=>server.close(r));}}
+ }catch(e){if(stop.aborted)throw stop.reason;throw e;}
+ finally{clearTimeout(timer);signal?.removeEventListener('abort',cancel);if(server){server.closeAllConnections();await new Promise(r=>server.close(r));}}
 }

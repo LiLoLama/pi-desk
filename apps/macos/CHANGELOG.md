@@ -1,5 +1,9 @@
 # Pi Desk für macOS – Änderungen
 
+## 0.3.1 – 12.10.2026
+
+- Wurde ein Projektordner verschoben oder umbenannt, nennt Pi Desk jetzt den fehlenden Ordner statt nur „OMP beendet“.
+
 ## 0.3.0 – 09.10.2026
 
 - Pi Desk sucht jetzt selbst nach Updates und zeigt vor dem Aktualisieren, was neu ist.

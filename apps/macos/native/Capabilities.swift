@@ -16,6 +16,8 @@ struct CapabilitySettingsView: View {
   @State private var liveNames: [String] = []
   @State private var liveChecked = false
   @State private var query = ""
+  @State private var login: MCPLoginSession?
+  @State private var convertTarget: Object?
   private func load() async {
     do {
       let result = try await desk.api("capabilities")
@@ -79,6 +81,62 @@ struct CapabilitySettingsView: View {
       } catch { self.error = error.localizedDescription }
       working = false
     }
+  }
+  private func loginStatus(_ row: Object) -> String? {
+    switch row["login"] as? String {
+    case "signed-in": "Angemeldet"
+    case "expired": "Anmeldung abgelaufen"
+    case "required": "Anmeldung erforderlich"
+    default: nil
+    }
+  }
+  private func startLogin(_ name: String) {
+    error = ""
+    notice = ""
+    Task {
+      do {
+        let result = try await desk.api("capabilities/mcp-login", body: ["name": name])
+        let session = MCPLoginSession(
+          id: result["id"] as? String ?? "", url: result["url"] as? String ?? "", name: name)
+        login = session
+        desk.open(session.url)
+        await pollLogin(session.id)
+      } catch { self.error = error.localizedDescription }
+    }
+  }
+  private func pollLogin(_ id: String) async {
+    while login?.id == id {
+      try? await Task.sleep(nanoseconds: 1_000_000_000)
+      guard login?.id == id else { return }
+      do {
+        let status = try await desk.api("capabilities/mcp-login-status", body: ["id": id])
+        switch status["state"] as? String {
+        case "done":
+          login = nil
+          notice = "Angemeldet."
+          await load()
+          return
+        case "failed":
+          login = nil
+          error = status["error"] as? String ?? "Anmeldung fehlgeschlagen."
+          await load()
+          return
+        case "cancelled":
+          login = nil
+          return
+        default:
+          continue
+        }
+      } catch {
+        login = nil
+        self.error = error.localizedDescription
+        return
+      }
+    }
+  }
+  private func cancelLogin(_ session: MCPLoginSession) {
+    login = nil
+    Task { _ = try? await desk.api("capabilities/mcp-login-cancel", body: ["id": session.id]) }
   }
   var body: some View {
     VStack(alignment: .leading, spacing: 16) {
@@ -145,6 +203,13 @@ struct CapabilitySettingsView: View {
                       ? row["command"] as? String ?? "" : row["url"] as? String ?? ""))
               )
               .font(.caption).foregroundStyle(.secondary).lineLimit(3)
+              if !skillsMode, let status = loginStatus(row) {
+                Text(status).font(.caption).foregroundStyle(
+                  row["login"] as? String == "signed-in" ? Color.secondary : Color.orange)
+              }
+              if !skillsMode, row["remote"] is Object {
+                Text("Verwendet mcp-remote mit eigener Anmeldung.").font(.caption).foregroundStyle(.secondary)
+              }
               if skillsMode {
                 Text(row["path"] as? String ?? "").font(.caption2).foregroundStyle(.secondary)
                   .lineLimit(1).truncationMode(.middle).help(row["path"] as? String ?? "")
@@ -167,6 +232,16 @@ struct CapabilitySettingsView: View {
                   }
                 }
                 if !skillsMode { Button("Verbindung testen") { test(name) } }
+                if !skillsMode, let state = row["login"] as? String {
+                  if state == "signed-in" {
+                    Button("Abmelden") { mutate("mcp-logout", ["name": name]) }
+                  } else {
+                    Button(state == "expired" ? "Neu anmelden" : "Anmelden") { startLogin(name) }
+                  }
+                }
+                if !skillsMode, row["remote"] is Object {
+                  Button("Als HTTP-Server mit Pi-Desk-Anmeldung einrichten") { convertTarget = row }
+                }
                 Spacer()
                 Button("Entfernen") { removeTarget = id }
               }.font(.caption).disabled(working)
@@ -182,6 +257,20 @@ struct CapabilitySettingsView: View {
             .font(.system(size: 13)).foregroundStyle(.secondary).padding(.vertical, 30)
           }
         }
+      }
+      .alert(
+        "Auf Pi-Desk-Anmeldung umstellen?",
+        isPresented: Binding(get: { convertTarget != nil }, set: { if !$0 { convertTarget = nil } }),
+        presenting: convertTarget
+      ) { row in
+        Button("Abbrechen", role: .cancel) { convertTarget = nil }
+        Button("Umstellen") { mutate("mcp-convert-remote", ["name": row["name"] as? String ?? ""]) }
+      } message: { row in
+        let remote = row["remote"] as? Object ?? [:]
+        let dropped = (remote["dropped"] as? [String] ?? []).joined(separator: " ")
+        Text(
+          "Der Eintrag wird ein HTTP-Server für \(remote["url"] as? String ?? ""). Danach mit „Anmelden“ anmelden."
+            + (dropped.isEmpty ? "" : " Nicht übernommen: \(dropped)"))
       }
       HStack {
         Button("Ladezustand prüfen", action: inspect).disabled(working || desk.selected == nil)
@@ -228,6 +317,23 @@ struct CapabilitySettingsView: View {
           }
         }
       }
+      .sheet(item: $login) { session in
+        VStack(alignment: .leading, spacing: 14) {
+          Text("Anmeldung im Browser abschließen").font(.headline)
+          Text("Pi Desk wartet auf die Freigabe für „\(session.name)“. Der Browser sollte sich geöffnet haben.")
+            .font(.system(size: 13)).foregroundStyle(.secondary)
+          ProgressView().controlSize(.small)
+          HStack {
+            Button("Im Browser öffnen") { desk.open(session.url) }
+            Button("Link kopieren") {
+              NSPasteboard.general.clearContents()
+              NSPasteboard.general.setString(session.url, forType: .string)
+            }
+            Spacer()
+            Button("Abbrechen") { cancelLogin(session) }.keyboardShortcut(.cancelAction)
+          }
+        }.padding(24).frame(width: 460)
+      }
       .alert(
         skillsMode ? "Skill trennen?" : "MCP-Verbindung entfernen?",
         isPresented: Binding(get: { removeTarget != nil }, set: { if !$0 { removeTarget = nil } }),
@@ -256,6 +362,12 @@ private struct MCPEditorRequest: Identifiable {
   let existing: Object?
 }
 
+private struct MCPLoginSession: Identifiable {
+  let id: String
+  let url: String
+  let name: String
+}
+
 private struct MCPSettingsEditor: View {
   @ObservedObject var desk: Desk
   let existing: Object?
@@ -271,6 +383,12 @@ private struct MCPSettingsEditor: View {
   @State private var headers = ""
   @State private var clearSecrets = false
   @State private var enabled = false
+  @State private var clientId = ""
+  @State private var clientSecret = ""
+  @State private var scope = ""
+  @State private var callbackPort = ""
+  @State private var clearClientSecret = false
+  private var storedSecret: Bool { (existing?["oauth"] as? Object)?["hasClientSecret"] as? Bool == true }
   @State private var working = false
   @State private var error = ""
   private func json(_ text: String) throws -> Any {
@@ -287,6 +405,18 @@ private struct MCPSettingsEditor: View {
         config["cwd"] = cwd
       } else {
         config["url"] = url
+      }
+      if type != "stdio" {
+        var oauth: Object = ["clientId": clientId, "scope": scope, "clearSecret": clearClientSecret]
+        if !clientSecret.isEmpty { oauth["clientSecret"] = clientSecret }
+        if !callbackPort.isEmpty {
+          guard let port = Int(callbackPort) else {
+            error = "Rückleitungs-Port muss eine Zahl sein."
+            return
+          }
+          oauth["callbackPort"] = port
+        }
+        config["oauth"] = oauth
       }
       if !env.isEmpty {
         config["env"] = try json(env)
@@ -358,13 +488,35 @@ private struct MCPSettingsEditor: View {
               }
             }.padding(.top, 10)
           }
+          if type != "stdio" {
+            DisclosureGroup("Erweiterte Anmeldung") {
+              VStack(alignment: .leading, spacing: 10) {
+                Text("Nur nötig, wenn der Anbieter eine registrierte App verlangt. Leer lassen meldet Pi Desk automatisch an.")
+                  .font(.caption).foregroundStyle(.secondary)
+                TextField("Client-ID", text: $clientId).accessibilityLabel("Client-ID")
+                SecureField(storedSecret ? "Client-Geheimnis · gespeichert" : "Client-Geheimnis · optional", text: $clientSecret)
+                  .accessibilityLabel("Client-Geheimnis")
+                if storedSecret {
+                  Toggle("Gespeichertes Client-Geheimnis entfernen", isOn: $clearClientSecret).font(.caption)
+                }
+                TextField("Scopes · durch Leerzeichen getrennt", text: $scope).accessibilityLabel("Scopes")
+                TextField("Rückleitungs-Port · optional", text: $callbackPort).accessibilityLabel("Rückleitungs-Port")
+                if let port = Int(callbackPort) {
+                  Text("Beim Anbieter eintragen: http://127.0.0.1:\(port)/callback").font(.caption)
+                    .foregroundStyle(.secondary).textSelection(.enabled)
+                } else if !clientId.isEmpty {
+                  Text("Registrierte Apps brauchen meist einen festen Port.").font(.caption).foregroundStyle(.orange)
+                }
+              }.padding(.top, 10)
+            }
+          }
           Toggle("Für Agenten aktivieren", isOn: $enabled)
           Text(
             "Aktivierte Server werden beim Sitzungsstart verbunden. Änderungen werden nur im Leerlauf übernommen."
           ).font(.caption).foregroundStyle(.secondary)
           if existing?["hasOAuth"] as? Bool == true {
             Text(
-              "Vorhandene OAuth-Konfiguration bleibt bei unverändertem Ziel erhalten. Neue OAuth-Anmeldungen sind hier noch nicht verfügbar."
+              "Vorhandene OAuth-Konfiguration bleibt bei unverändertem Ziel erhalten."
             ).font(.caption).foregroundStyle(.secondary)
           }
         }.textFieldStyle(.roundedBorder)
@@ -385,6 +537,11 @@ private struct MCPSettingsEditor: View {
           url = c["url"] as? String ?? ""
           cwd = c["cwd"] as? String ?? ""
           enabled = c["enabled"] as? Bool ?? false
+          if let oauth = c["oauth"] as? Object {
+            clientId = oauth["clientId"] as? String ?? ""
+            scope = oauth["scope"] as? String ?? ""
+            if let port = oauth["callbackPort"] as? Int { callbackPort = String(port) }
+          }
           if let data = try? JSONSerialization.data(withJSONObject: c["args"] as? [String] ?? []),
             let text = String(data: data, encoding: .utf8)
           {

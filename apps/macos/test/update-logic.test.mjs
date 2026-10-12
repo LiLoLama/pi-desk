@@ -42,3 +42,9 @@ test('a held update dialog brings the hidden whats new window to the front', asy
   const held = source.slice(source.indexOf('if WhatsNew.shared.isOpen {'), source.indexOf('      return\n    }', source.indexOf('if WhatsNew.shared.isOpen {')));
   assert.match(held, /WhatsNew\.shared\.bringToFront\(\)/);
 });
+
+test('the app bundle ships the MCP OAuth engine modules', async () => {
+  const build = await readFile(path.join(root, 'native/build.py'), 'utf8');
+  assert.match(build, /'mcp-oauth\.mjs'/);
+  assert.match(build, /'mcp-credentials\.mjs'/);
+});

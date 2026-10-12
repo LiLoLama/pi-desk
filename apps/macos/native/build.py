@@ -72,7 +72,7 @@ shutil.copy2(node,resources/'node')
 os.chmod(resources/'node',0o755)
 if not is_mach_o(resources/'node'): raise SystemExit('Bundled node is not a Mach-O executable.')
 host=resources/'host';host.mkdir(exist_ok=True)
-for name in ['server.mjs','rpc.mjs','rpc-contract.mjs','files.mjs','settings.mjs','capabilities.mjs','local-models.mjs','plugins.mjs','worktrees.mjs','rules.mjs']:shutil.copy2(root/name,host/name)
+for name in ['server.mjs','rpc.mjs','rpc-contract.mjs','files.mjs','settings.mjs','capabilities.mjs','mcp-oauth.mjs','mcp-credentials.mjs','local-models.mjs','plugins.mjs','worktrees.mjs','rules.mjs']:shutil.copy2(root/name,host/name)
 shutil.copytree(root/'node_modules'/'yaml',host/'node_modules'/'yaml',dirs_exist_ok=True)
 shutil.copytree(root/'runtime',host/'runtime',dirs_exist_ok=True)
 # Browser assets remain available only to authenticated native requests, not used for native UI.

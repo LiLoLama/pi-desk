@@ -85,3 +85,12 @@ Die bisherigen automatisierten Prüfungen liefen unter macOS. Diese Liste dient 
 8. „Diese Version überspringen“: Kein automatischer Dialog mehr für diese Version, manuelle Suche zeigt sie weiterhin.
 9. Netzwerk trennen, „Jetzt nach Updates suchen“: verständliche Meldung, App bleibt benutzbar.
 10. `%LOCALAPPDATA%\Pi Desk\desktop\logs\updates.log` enthält die Prüfungen.
+
+## MCP-Anmeldung (ab nächster Version)
+
+1. Einstellungen → MCP → Server hinzufügen: HTTP, `https://www.aitraining.institute/mcp`, speichern.
+2. „Testen“ → „Anmeldung erforderlich“.
+3. „Anmelden“ → Standardbrowser öffnet die Anmeldeseite; nach Freigabe „Anmeldung abgeschlossen“ im Browser, „Angemeldet“ in Pi Desk. Windows-Firewall-Hinweis für 127.0.0.1 darf nicht erscheinen; falls doch, notieren.
+4. „Testen“ → verbunden mit Werkzeugen. Neuer Chat: MCP-Werkzeuge werden geladen.
+5. Pi Desk neu starten → weiterhin „Angemeldet“.
+6. „Abmelden“ → Status weg, „Testen“ → „Anmeldung erforderlich“.

@@ -32,6 +32,8 @@ Das Setup ist nicht signiert; SmartScreen kann beim ersten Start warnen. Bisheri
 - Schriftgröße, reduzierte Bewegung, vier anpassbare Tastenkürzel und ein optionaler kleiner Pi-Begleiter.
 - Lokale GGUF-Modelle finden, herunterladen, laden und verwenden. Die Windows-Engine wird bei Bedarf als geprüfter CPU- oder Vulkan-Download eingerichtet. Die Kontextlänge ist je Modell wählbar, bis zur in der Modelldatei hinterlegten Trainingslänge (höchstens 1M Tokens, Standard 32k). Jede Stufe zeigt den geschätzten Speicherbedarf; was für den Arbeitsspeicher voraussichtlich zu groß ist, ist gesperrt. Mit Vulkan zählt zusätzlich der Grafikspeicher. Alternativ Ollama, LM Studio oder kompatible API verbinden.
 
+Server mit OAuth (HTTP/SSE) meldest du unter **Einstellungen → MCP** mit **Anmelden** im Browser an: Pi Desk liest die Metadaten des Servers, registriert sich dort (oder nutzt die Client-ID aus **Erweiterte Anmeldung**), nimmt die Rückleitung auf `127.0.0.1` entgegen und legt die Anmeldung in OMPs `agent.db` ab; OMP setzt das Token ein und erneuert es selbst. **Abmelden** entfernt sie, eine geänderte URL verlangt eine neue Anmeldung. Einträge mit `mcp-remote` lassen sich auf einen HTTP-Server mit Pi-Desk-Anmeldung umstellen.
+
 ## Bedienung
 
 | Kürzel | Aktion |
@@ -88,6 +90,8 @@ Mac-Entwicklung mit passender OMP-Binary:
 ```sh
 PI_DESK_OMP="$PWD/../macos/runtime/omp" npm start
 ```
+
+Beim Anheben der OMP-Version `PI_DESK_OMP="$PWD/../macos/runtime/omp" node test/mcp-oauth-smoke.mjs` ausführen: Er prüft, dass OMP die von Pi Desk gespeicherte MCP-Anmeldung liest, nutzt und erneuert. Ändert OMP das Speicherformat, `SCHEMA_VERSION` in `mcp-credentials.mjs` erst nach Prüfung anheben.
 
 ## Release veröffentlichen
 

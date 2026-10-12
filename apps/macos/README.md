@@ -89,6 +89,8 @@ SHA-256: `23d3f9ab712fe700e80a43dbd1e8159dfea8e106bf717648a49b1bba1ad3e508`
 
 `runtime/` ist gitignored. Nach erneutem Auschecken `node install-runtime.mjs` ausführen. Andere Plattformen sind noch nicht paketiert. Der Adapter verwendet **rpc-ui**, weil reguläres rpc die Werkzeug-Genehmigungsoberfläche nicht injiziert. Protocol v2 mit validierter Chunk-Rekonstruktion.
 
+Beim Anheben der OMP-Version `node test/mcp-oauth-smoke.mjs` ausführen: Er prüft, dass OMP die von Pi Desk gespeicherte MCP-Anmeldung liest, nutzt und erneuert. Ändert OMP das Speicherformat, `SCHEMA_VERSION` in `mcp-credentials.mjs` erst nach Prüfung anheben.
+
 ## Prüfen
 
 ```sh
@@ -100,6 +102,7 @@ node test/native-host.mjs
 node test/settings-smoke.mjs
 node test/capabilities-smoke.mjs
 node test/mcp-transports-smoke.mjs
+node test/mcp-oauth-smoke.mjs
 node --test test/session-rpc.test.mjs
 node --test test/extensions.test.mjs
 ```
@@ -133,7 +136,7 @@ Konfigurationsänderungen werden nur angenommen, wenn alle Worker und Anmeldunge
 
 **Einstellungen → Skills → +** verbindet den lokalen Ordner mit `SKILL.md`. Neue Skills sind zunächst ausgeschaltet. Vorschau, Suche, Quellpfad und Aktivierung sind verfügbar. Trennen entfernt nur die Pi-Desk-Verknüpfung; der Originalordner bleibt erhalten. Ein Skill muss gültiges YAML-Frontmatter mit `name` und `description` besitzen. Automatische Skill-Quellen bleiben deaktiviert; nur explizit aktivierte Skills werden geladen. Repository-Download und automatische Updates sind noch nicht enthalten.
 
-**Einstellungen → MCP → +** richtet ein lokales Programm (`stdio`), einen HTTP- oder SSE-Endpunkt ein. Argumente werden als JSON-Liste eingegeben; Header/Umgebungsvariablen als JSON-Objekte. Leere Felder behalten gespeicherte Werte; `{}` oder der Entfernen-Schalter löschen sie. Bei Zieländerungen werden vorhandene Werte nicht unbemerkt übertragen. Geheimnisse liegen in der privaten `agent/mcp.json` (0600), noch nicht im Schlüsselbund. Neue OAuth-Anmeldungen sind noch nicht angebunden.
+**Einstellungen → MCP → +** richtet ein lokales Programm (`stdio`), einen HTTP- oder SSE-Endpunkt ein. Argumente werden als JSON-Liste eingegeben; Header/Umgebungsvariablen als JSON-Objekte. Leere Felder behalten gespeicherte Werte; `{}` oder der Entfernen-Schalter löschen sie. Bei Zieländerungen werden vorhandene Werte nicht unbemerkt übertragen. Geheimnisse liegen in der privaten `agent/mcp.json` (0600), noch nicht im Schlüsselbund. Server mit OAuth (HTTP/SSE) meldest du mit **Anmelden** im Browser an: Pi Desk liest die Metadaten des Servers, registriert sich dort (oder nutzt die Client-ID aus **Erweiterte Anmeldung**), nimmt die Rückleitung auf `127.0.0.1` entgegen und legt die Anmeldung in OMPs `agent.db` ab; OMP setzt das Token ein und erneuert es selbst. **Abmelden** entfernt sie, eine geänderte URL verlangt eine neue Anmeldung. Einträge mit `mcp-remote` lassen sich auf einen HTTP-Server mit Pi-Desk-Anmeldung umstellen.
 
 „Verbindung testen“ startet den angegebenen Prozess bzw. verbindet den Endpunkt, initialisiert MCP und liest die Werkzeugliste ohne Werkzeugaufruf oder Modellanfrage. „Ladezustand prüfen“ liest die tatsächlich in der ausgewählten Sitzung angebotenen Skills und MCP-Werkzeugrouten. OMP 18 bietet MCP-Werkzeuge über `xd://`-Routen an. Aktivieren/Deaktivieren übernimmt die Konfiguration im Leerlauf und lädt die Sitzung erneut. Die bestehenden Genehmigungsmodi gelten auch für MCP-Aufrufe. Projekt-MCP bleibt deaktiviert.
 

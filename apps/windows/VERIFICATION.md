@@ -23,6 +23,22 @@ Setup (NSIS, pro Benutzer, unsigniert, keine Differenzupdates) und automatische 
 - Dass `gh` den Entwurf über den Tag `windows-vX.Y.Z` findet (`release:publish`).
 - Alle Punkte aus [WINDOWS-TESTPLAN.md](WINDOWS-TESTPLAN.md) → „Updates (ab 0.4.0)“.
 
+## MCP-OAuth · 12.10.2026
+
+OAuth-Anmeldung für HTTP/SSE-MCP-Server wie auf dem Mac (Engine-Module `mcp-oauth.mjs` und `mcp-credentials.mjs`, `capabilities.mjs`, Routen in `server.mjs`), Oberfläche in `public/features.js`. Anmeldung in OMPs `agent.db` (Schema 8), erweiterte Anmeldung, `mcp-remote`-Umstellung und Verbindungstest mit echten Zugangsdaten („Anmeldung erforderlich“ bei 401/403) mit Übernahme erneuerter Tokens. OMP wird nach der Anmeldung neu gestartet: Chats im Leerlauf sofort, beschäftigte nach ihrer Arbeit; unter Windows wartet der Neustart zusätzlich auf eingereihte Nachrichten.
+
+### Auf macOS nachgewiesen
+
+- `npm test` in `apps/windows`: 99 von 99 Tests bestanden, ohne OMP-Runtime. Darin enthalten sind `mcp-oauth` (13 Tests), `mcp-credentials` (8), Capabilities einschließlich OAuth und `mcp-remote`, der Login-Routentest und der RPC-Vertrag zum Neustart von OMP.
+- `PI_DESK_OMP="$PWD/../macos/runtime/omp" node test/mcp-oauth-smoke.mjs` (Windows-Kopie des Smoke-Tests, Mac-OMP-18.4.10-Binary): 6 von 6 bestanden. Dieselben Prüfungen wie auf dem Mac: 401 wird zu „Anmeldung erforderlich“, `omp token` liest die gespeicherte Anmeldung, OMP lädt Werkzeuge mit Bearer-Token, der Verbindungstest übernimmt das erneuerte Token, OMP erneuert über das Refresh-Token, Abmelden entfernt die Anmeldung.
+- Oberfläche in Electron auf dem Mac (temporäres Profil, lokale OAuth-Fixture, Chrome DevTools Protocol): Test zeigt „Anmeldung erforderlich“; Anmelden öffnet den Dialog und endet mit „Angemeldet“; Test verbunden; Abmelden; Abbrechen; frisches Profil ohne `agent.db`; Dialog nach dem Schließen erneut anzeigbar; Hinweis zur Rückleitungsadresse. `window.open` war ersetzt, die native Rückfrage „Im Standardbrowser öffnen?“ wurde nicht bedient.
+- Öffentliche Metadaten des AITI-MCP-Servers nur lesend geprüft: 401 mit `resource_metadata`, Registrierungsendpunkt, PKCE S256, Refresh-Tokens. Es gab keine echte Anmeldung dort.
+
+### Auf Windows offen
+
+- Ein Lauf auf einem Windows-Rechner steht aus: Standardbrowser öffnen, Rückleitung auf `127.0.0.1` ohne Firewall-Hinweis, Anmeldung bleibt nach App-Neustart erhalten. Ablauf in [WINDOWS-TESTPLAN.md](WINDOWS-TESTPLAN.md), Abschnitt „MCP-Anmeldung“.
+- Eine echte Anmeldung gegen den AITI-MCP-Server steht aus.
+
 ## Kanonischer Downloadordner lokaler Modelle · 05.10.2026
 
 - `init()` legte den Downloadordner als Rohpfad `<Daten>\local-models\models` in `local-models.json` ab, alle anderen Ordner per `realpath`. Bei nicht-kanonischen Datenpfaden (Windows: 8.3-Kurznamen wie `C:\Users\LIAMSC~1\…`, Junctions; macOS: `/var` → `/private/var`) scheiterte der Download in genau diesen Ordner mit „Bitte einen verbundenen Modellordner wählen.“; auch der Trennschutz des Downloadordners und die Vorschläge verglichen Rohpfade.

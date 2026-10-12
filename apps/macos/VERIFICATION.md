@@ -165,3 +165,19 @@ Neu gebaut: `Pi-Desk-0.2.0-apple-silicon.dmg` (155.724.006 Bytes). SHA-256: `9d5
 - Download-Zielprüfung (`downloadTarget`) und Vorschläge vergleichen kanonische Pfade.
 - Neuer Test: Datenverzeichnis über Symlink, Altprofil mit Rohpfad, Duplikat und Kontextwert → Ordnerliste kanonisch und dedupliziert, `contexts` erhalten, Download-Ziel über Roh- und kanonischen Pfad akzeptiert, fremder Ordner abgewiesen, Downloadordner nicht trennbar; frisches Profil ebenso. 20/20 Node-Tests bestanden.
 - Nicht geprüft: echter Hugging-Face-Download und die native App mit symlinktem `PI_DESK_DATA`.
+
+## MCP-OAuth · 12.10.2026
+
+OAuth-Anmeldung für HTTP/SSE-MCP-Server: Engine-Module `mcp-oauth.mjs` und `mcp-credentials.mjs`, `capabilities.mjs`, Routen in `server.mjs` und SwiftUI-Oberfläche in `native/Capabilities.swift`. Die Anmeldung liegt in OMPs `agent.db` (Schema 8). Dazu gehören die erweiterte Anmeldung (Client-ID, Secret, Scopes, feste Rückleitungsadresse), Erkennen und Umstellen von `mcp-remote`-Einträgen und der Verbindungstest mit den echten Zugangsdaten („Anmeldung erforderlich“ bei 401/403); erneuerte Tokens aus der Testkopie werden in den echten Speicher übernommen. OMP wird nach der Anmeldung neu gestartet: Chats im Leerlauf sofort, beschäftigte nach ihrer Arbeit.
+
+### Nachgewiesen
+
+- `npm test` in `apps/macos`: 60 von 60 Tests bestanden, ohne OMP-Runtime. Darin enthalten sind `mcp-oauth` (13 Tests), `mcp-credentials` (8), Capabilities einschließlich OAuth und `mcp-remote`, der Login-Routentest und der RPC-Vertrag zum Neustart von OMP.
+- `node test/mcp-oauth-smoke.mjs` mit echter OMP 18.4.10: 6 von 6 bestanden. Ein Server ohne Anmeldung ergibt „Anmeldung erforderlich“ (401); `omp token` liest die gespeicherte Anmeldung; OMP lädt die Werkzeuge mit Bearer-Token; der Verbindungstest übernimmt das erneuerte Token in den echten Speicher; OMP erneuert selbst über das Refresh-Token; Abmelden entfernt die Anmeldung.
+- Öffentliche Metadaten des AITI-MCP-Servers nur lesend geprüft: 401 mit `resource_metadata`, Registrierungsendpunkt, PKCE S256, Refresh-Tokens. Es gab keine echte Anmeldung dort.
+- Swift-Typecheck der nativen Quellen ohne Fehler.
+
+### Offen
+
+- Die SwiftUI-Oberfläche der MCP-Anmeldung wurde nicht gestartet und nicht bedient (Handprüfung auf dem Mac steht aus).
+- Eine echte Anmeldung gegen den AITI-MCP-Server steht aus.

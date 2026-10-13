@@ -1,5 +1,13 @@
 # Pi Desk für macOS – Änderungen
 
+## 0.5.0 – 13.10.2026
+
+- MCP-Server mit OAuth-Anmeldung (zum Beispiel der AITI-MCP) lassen sich jetzt verbinden: In den Einstellungen unter „MCP“ auf „Anmelden“ klicken und im Browser freigeben. Pi Desk verlängert den Zugang danach selbst.
+- Die Liste zeigt, ob ein Server angemeldet ist, die Anmeldung abgelaufen ist oder eine Anmeldung nötig ist. „Abmelden“ entfernt sie wieder.
+- „Verbindung testen“ nutzt die Anmeldung und meldet klar, wenn eine Anmeldung erforderlich ist.
+- „Erweiterte Anmeldung“ im Server-Dialog für Anbieter, die eine registrierte App verlangen (Client-ID, Client-Geheimnis, Scopes, fester Rückleitungs-Port).
+- Einträge mit `mcp-remote` lassen sich auf einen HTTP-Server mit Pi-Desk-Anmeldung umstellen.
+
 ## 0.4.0 – 12.10.2026
 
 - Nach Updates mit größeren Neuerungen zeigt Pi Desk beim ersten Start einmal, was neu ist. Reine Fehlerbehebungen bleiben still.

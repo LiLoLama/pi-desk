@@ -1,12 +1,32 @@
-version: 0.5.0
+version: 0.6.0
 files:
-  - url: https://github.com/LiLoLama/pi-desk/releases/download/windows-v0.5.0/Pi-Desk-0.5.0-Windows-x64-Setup.exe
-    sha512: ESr2lnfl8eekptoQkj9K9FeOga9og8h79T0IimK8zYuh1Ad2SeXYVF9zXJsjeK6dNZ2+E2c3FFdqyOu+qt+h1A==
-    size: 195190254
-path: https://github.com/LiLoLama/pi-desk/releases/download/windows-v0.5.0/Pi-Desk-0.5.0-Windows-x64-Setup.exe
-sha512: ESr2lnfl8eekptoQkj9K9FeOga9og8h79T0IimK8zYuh1Ad2SeXYVF9zXJsjeK6dNZ2+E2c3FFdqyOu+qt+h1A==
-releaseDate: 2026-10-12T09:49:26.404Z
+  - url: https://github.com/LiLoLama/pi-desk/releases/download/windows-v0.6.0/Pi-Desk-0.6.0-Windows-x64-Setup.exe
+    sha512: JQhz1C3CWniaj3aZsorYilfrtGZpGCspJmoVEX/oMrWalzEaB1ZQrderAK6fpnPVgTkNmJsghhxJvFwXLJi+9A==
+    size: 195201435
+path: https://github.com/LiLoLama/pi-desk/releases/download/windows-v0.6.0/Pi-Desk-0.6.0-Windows-x64-Setup.exe
+sha512: JQhz1C3CWniaj3aZsorYilfrtGZpGCspJmoVEX/oMrWalzEaB1ZQrderAK6fpnPVgTkNmJsghhxJvFwXLJi+9A==
+releaseDate: 2026-10-13T07:30:03.975Z
 releaseNotes: >-
+  ## 0.6.0 – 13.10.2026
+
+
+  - MCP-Server mit OAuth-Anmeldung (zum Beispiel der AITI-MCP) lassen sich jetzt
+  verbinden: In den Einstellungen unter „MCP“ auf „Anmelden“ klicken und im
+  Browser freigeben. Pi Desk verlängert den Zugang danach selbst.
+
+  - Die Liste zeigt, ob ein Server angemeldet ist, die Anmeldung abgelaufen ist
+  oder eine Anmeldung nötig ist. „Abmelden“ entfernt sie wieder.
+
+  - „Verbindung testen“ nutzt die Anmeldung und meldet klar, wenn eine Anmeldung
+  erforderlich ist.
+
+  - „Erweiterte Anmeldung“ im Server-Dialog für Anbieter, die eine registrierte
+  App verlangen (Client-ID, Client-Geheimnis, Scopes, fester Rückleitungs-Port).
+
+  - Einträge mit `mcp-remote` lassen sich auf einen HTTP-Server mit
+  Pi-Desk-Anmeldung umstellen.
+
+
   ## 0.5.0 – 12.10.2026
 
 

@@ -12,7 +12,7 @@ Beide sind Vorabversionen. Windows ist noch nicht auf einem echten Windows-PC ve
 ## Struktur
 
 - [apps/macos](apps/macos/README.md): SwiftUI/AppKit, Apple Silicon, macOS 14+.
-- [apps/windows](apps/windows/README.md): Electron, Windows x64, Version 0.4.0.
+- [apps/windows](apps/windows/README.md): Electron, Windows x64.
 - [docs/design](docs/design/README.md): Designentwürfe und früheres klickbares Mockup.
 - [docs/MIGRATION.md](docs/MIGRATION.md): Umzug, Prüfung und Herkunft der Dateien.
 - `archive/`: vorhandenes älteres Projekt-ZIP; nur lokal, von Git ausgeschlossen.

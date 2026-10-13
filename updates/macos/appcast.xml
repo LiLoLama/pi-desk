@@ -3,6 +3,21 @@
   <channel>
     <title>Pi Desk für macOS</title>
     <item>
+      <title>Pi Desk 0.5.0</title>
+      <pubDate>Tue, 13 Oct 2026 07:41:21 GMT</pubDate>
+      <sparkle:version>500</sparkle:version>
+      <sparkle:shortVersionString>0.5.0</sparkle:shortVersionString>
+      <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+      <description><![CDATA[## 0.5.0 – 13.10.2026
+
+- MCP-Server mit OAuth-Anmeldung (zum Beispiel der AITI-MCP) lassen sich jetzt verbinden: In den Einstellungen unter „MCP“ auf „Anmelden“ klicken und im Browser freigeben. Pi Desk verlängert den Zugang danach selbst.
+- Die Liste zeigt, ob ein Server angemeldet ist, die Anmeldung abgelaufen ist oder eine Anmeldung nötig ist. „Abmelden“ entfernt sie wieder.
+- „Verbindung testen“ nutzt die Anmeldung und meldet klar, wenn eine Anmeldung erforderlich ist.
+- „Erweiterte Anmeldung“ im Server-Dialog für Anbieter, die eine registrierte App verlangen (Client-ID, Client-Geheimnis, Scopes, fester Rückleitungs-Port).
+- Einträge mit `mcp-remote` lassen sich auf einen HTTP-Server mit Pi-Desk-Anmeldung umstellen.]]></description>
+      <enclosure url="https://github.com/LiLoLama/pi-desk/releases/download/macos-v0.5.0/Pi-Desk-0.5.0-apple-silicon.dmg" length="156453130" type="application/octet-stream" sparkle:edSignature="PPDFXYxv3JxgkJdBo0iT4kUneRXTZTgq13SRaJzlyrlBT+CA+E/uGJBw2p0kOcH9GZl3s0VUzjc6Hkl6/H0ADw=="/>
+    </item>
+    <item>
       <title>Pi Desk 0.4.0</title>
       <pubDate>Mon, 12 Oct 2026 09:52:37 GMT</pubDate>
       <sparkle:version>400</sparkle:version>

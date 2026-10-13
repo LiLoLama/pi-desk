@@ -11,7 +11,7 @@ try{
  const key=credentialKey(f.url);const token=async(...extra)=>(await run(binary,['token',key,...extra],{env:{...process.env,PI_CODING_AGENT_DIR:agent}})).stdout.trim();
  const expire=()=>{const d=new DatabaseSync(path.join(agent,'agent.db'));d.prepare("UPDATE auth_credentials SET data=json_set(data,'$.expires',1) WHERE provider=? AND disabled_cause IS NULL").run(key);d.close();};
  const active=()=>JSON.parse(c.credentials.active(f.url));const refreshGrants=()=>f.state.tokenRequests.filter(r=>r.grant_type==='refresh_token').length;
- const stored=JSON.parse(new DatabaseSync(path.join(agent,'agent.db')).prepare("SELECT data FROM auth_credentials WHERE provider=? AND disabled_cause IS NULL").get(key).data);
+ const read=new DatabaseSync(path.join(agent,'agent.db'));const stored=JSON.parse(read.prepare("SELECT data FROM auth_credentials WHERE provider=? AND disabled_cause IS NULL").get(key).data);read.close();
  assert.equal(await token(),stored.access);console.log('PASS: omp token liest die Anmeldung');
  const probe=await c.probe('aiti',binary,process.env);assert.deepEqual(probe.tools,['proof']);console.log('PASS: OMP lädt die Werkzeuge mit Bearer');
  // The probe runs on a copy of agent.db: OMP refreshes there, Pi Desk must adopt the rotated token into the real store.

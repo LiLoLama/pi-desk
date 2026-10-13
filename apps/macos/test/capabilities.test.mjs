@@ -114,6 +114,6 @@ test('a revoked login (authRequired) is shown as required although a credential 
  await mkdir(path.join(root,'agent'));ompSchema(path.join(root,'agent/agent.db'));const c=new Capabilities(root);await c.init();const url='https://example.com/mcp';
  await c.saveServer({name:'app',config:{type:'http',url}});c.credentials.save(url,{access:'a',refresh:'r'});assert.equal((await c.servers())[0].login,'signed-in');
  c.authRequired.add(url);assert.equal((await c.servers())[0].login,'required');
- new DatabaseSync(path.join(root,'agent/agent.db')).exec("UPDATE auth_credentials SET disabled_cause='refresh failed'");assert.equal((await c.servers())[0].login,'expired');
+ const db=new DatabaseSync(path.join(root,'agent/agent.db'));db.exec("UPDATE auth_credentials SET disabled_cause='refresh failed'");db.close();assert.equal((await c.servers())[0].login,'expired');
  }finally{await rm(root,{recursive:true,force:true});}
 });

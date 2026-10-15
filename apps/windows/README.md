@@ -4,7 +4,7 @@ Eigenständiger Windows-Port in einem eigenen Ordner. Die native Mac-App bleibt 
 
 ## Start auf Windows
 
-1. `Pi-Desk-0.6.0-Windows-x64-Setup.exe` ausführen. Bei der Installation „Nur für mich“ wählen – dann sind keine Administratorrechte nötig und Updates laufen ohne Rückfrage. Pi Desk aus Startmenü oder Desktopverknüpfung öffnen.
+1. `Pi-Desk-0.7.0-Windows-x64-Setup.exe` ausführen. Bei der Installation „Nur für mich“ wählen – dann sind keine Administratorrechte nötig und Updates laufen ohne Rückfrage. Pi Desk aus Startmenü oder Desktopverknüpfung öffnen.
 2. Anbieter verbinden oder unter Einstellungen einen kompatiblen Modellserver hinzufügen.
 3. Mit **Strg+O** einen Projektordner öffnen, Modell wählen und Nachricht senden.
 
@@ -14,7 +14,7 @@ Das Setup ist nicht signiert; SmartScreen kann beim ersten Start warnen. Bisheri
 
 ## GitHub-Download
 
-[Windows-Vorabversion 0.6.0](https://github.com/LiLoLama/pi-desk/releases/tag/windows-v0.6.0): Setup für x64 mit automatischen Updates. Bisherige ZIP-Nutzer installieren es einmalig manuell; danach aktualisiert sich Pi Desk selbst.
+[Windows-Vorabversion 0.7.0](https://github.com/LiLoLama/pi-desk/releases/tag/windows-v0.7.0): Setup für x64 mit automatischen Updates. Bisherige ZIP-Nutzer installieren es einmalig manuell; danach aktualisiert sich Pi Desk selbst.
 
 ## Funktionen
 

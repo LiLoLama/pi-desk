@@ -165,6 +165,6 @@ node test/local-engine-smoke.mjs /absoluter/pfad/zu/einem/MLX-Modell
 
 ## GitHub-Download
 
-[macOS-Vorabversion 0.5.0](https://github.com/LiLoLama/pi-desk/releases/tag/macos-v0.5.0): DMG für Apple Silicon mit OMP 18.4.10. Developer-ID-signiert und notarisiert.
+[macOS-Vorabversion 0.6.0](https://github.com/LiLoLama/pi-desk/releases/tag/macos-v0.6.0): DMG für Apple Silicon mit OMP 18.4.10. Developer-ID-signiert und notarisiert.
 
 Ab 0.3.0 sind automatische Updates enthalten. Wer eine ältere Version hat, installiert einmalig manuell. Danach aktualisiert sich Pi Desk selbst. Die Drittanbieter-Lizenzen (OMP, YAML und Sparkle, siehe `licenses/SPARKLE-LICENSE.txt`) liegen im App-Paket und im DMG-Ordner `Lizenzen`.

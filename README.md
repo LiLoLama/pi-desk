@@ -4,8 +4,8 @@ Desktop-Oberflächen für Oh My Pi: eine native macOS-App und eine Windows-App a
 
 ## Downloads
 
-- [Windows 0.6.0 – Setup für x64](https://github.com/LiLoLama/pi-desk/releases/tag/windows-v0.6.0)
-- [macOS 0.5.0 – DMG für Apple Silicon](https://github.com/LiLoLama/pi-desk/releases/tag/macos-v0.5.0)
+- [Windows 0.7.0 – Setup für x64](https://github.com/LiLoLama/pi-desk/releases/tag/windows-v0.7.0)
+- [macOS 0.6.0 – DMG für Apple Silicon](https://github.com/LiLoLama/pi-desk/releases/tag/macos-v0.6.0)
 
 Beide sind Vorabversionen. Windows ist noch nicht auf einem echten Windows-PC verifiziert; macOS ist ad-hoc signiert und nicht notarisiert. Hinweise und Prüfsummen stehen beim jeweiligen Release.
 

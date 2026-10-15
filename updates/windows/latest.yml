@@ -1,12 +1,29 @@
-version: 0.6.0
+version: 0.7.0
 files:
-  - url: https://github.com/LiLoLama/pi-desk/releases/download/windows-v0.6.0/Pi-Desk-0.6.0-Windows-x64-Setup.exe
-    sha512: JQhz1C3CWniaj3aZsorYilfrtGZpGCspJmoVEX/oMrWalzEaB1ZQrderAK6fpnPVgTkNmJsghhxJvFwXLJi+9A==
-    size: 195201435
-path: https://github.com/LiLoLama/pi-desk/releases/download/windows-v0.6.0/Pi-Desk-0.6.0-Windows-x64-Setup.exe
-sha512: JQhz1C3CWniaj3aZsorYilfrtGZpGCspJmoVEX/oMrWalzEaB1ZQrderAK6fpnPVgTkNmJsghhxJvFwXLJi+9A==
-releaseDate: 2026-10-13T07:30:03.975Z
+  - url: https://github.com/LiLoLama/pi-desk/releases/download/windows-v0.7.0/Pi-Desk-0.7.0-Windows-x64-Setup.exe
+    sha512: 7T8Htz6auBR6xq2jRIVy4hN1krjwFaoFudLDnbMAuRVguwvIH0X5l1u28mInoA8jJsdrRoDqFons0DaerL4JMQ==
+    size: 195206007
+path: https://github.com/LiLoLama/pi-desk/releases/download/windows-v0.7.0/Pi-Desk-0.7.0-Windows-x64-Setup.exe
+sha512: 7T8Htz6auBR6xq2jRIVy4hN1krjwFaoFudLDnbMAuRVguwvIH0X5l1u28mInoA8jJsdrRoDqFons0DaerL4JMQ==
+releaseDate: 2026-10-15T14:26:53.188Z
 releaseNotes: >-
+  ## 0.7.0 – 15.10.2026
+
+
+  - Projekte lassen sich per Rechtsklick umbenennen. Nur der Name in Pi Desk
+  ändert sich, der Ordner bleibt, wie er ist. „Ordnernamen verwenden“ stellt den
+  ursprünglichen Namen wieder her.
+
+  - „Aus Pi Desk entfernen …“ räumt ein Projekt aus der Liste. Seine Chats
+  kommen in den Papierkorb, der Ordner auf deinem PC bleibt unverändert. Wer
+  einen dieser Chats wiederherstellt oder den Ordner erneut öffnet, bekommt das
+  Projekt zurück.
+
+  - Wurde ein Projektordner verschoben oder umbenannt, ordnet „Ordner neu
+  zuordnen …“ ihn wieder zu. Die Chats bleiben erhalten, statt dass ein zweites
+  Projekt entsteht.
+
+
   ## 0.6.0 – 13.10.2026
 
 

@@ -18,7 +18,7 @@ Das Setup ist nicht signiert; SmartScreen kann beim ersten Start warnen. Bisheri
 
 ## Funktionen
 
-- Projekte, persistente Chats, Suche, Umbenennen, Archiv und Papierkorb mit Wiederherstellen/endgültigem Löschen.
+- Projekte, persistente Chats, Suche, Umbenennen, Archiv und Papierkorb mit Wiederherstellen/endgültigem Löschen. Projekte per Rechtsklick umbenennen, einem verschobenen Ordner neu zuordnen oder aus Pi Desk entfernen (Chats in den Papierkorb, Ordner bleibt unverändert).
 - Streaming, Modellwechsel, Denkaufwand, Fast-Modus, Komprimierung, Statistiken, Slash-Befehle und Sitzungsreset.
 - Echte Genehmigungen: einmalig, werkzeugspezifisch für den Chat oder global; gespeicherte Regeln lassen sich löschen. Anbieter-Sicherheitsabfragen werden nicht automatisch bestätigt.
 - Mit OMP 18.4.10 synchronisierte Warteschlange mit einzeln entfernbaren Folgeaufträgen; sofortige Steuerungsnachricht, Unterbrechen und Stoppen. Agentenarbeit gilt erst nach dem vollständigen RPC-Sitzungsabschluss als beendet.

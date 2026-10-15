@@ -23,6 +23,21 @@ Setup (NSIS, pro Benutzer, unsigniert, keine Differenzupdates) und automatische 
 - Dass `gh` den Entwurf über den Tag `windows-vX.Y.Z` findet (`release:publish`).
 - Alle Punkte aus [WINDOWS-TESTPLAN.md](WINDOWS-TESTPLAN.md) → „Updates (ab 0.4.0)“.
 
+## Projekte umbenennen, entfernen, neu zuordnen · 15.10.2026
+
+Gleiche Serverlogik wie auf dem Mac (Route `/api/project-state`, getrennt in `apps/windows/server.mjs` eingebaut). In der Oberfläche öffnet ein Rechtsklick (oder die Kontextmenü-Taste) auf eine Projektzeile das Menü „Projekt umbenennen …“, „Ordnernamen verwenden“, „Ordner neu zuordnen …“, „Neue Aufgabe“, „Aus Pi Desk entfernen …“. Neu-Zuordnen nutzt den vorhandenen Electron-Ordnerdialog, Entfernen die native Bestätigung.
+
+### Auf macOS nachgewiesen
+
+- `npm test` in `apps/windows`: 108 von 108 Tests bestanden, davon fünf neu in `test/project-state.test.mjs` (gleiche Fälle wie auf dem Mac).
+- `npm run test:desktop-parity` mit der Mac-OMP-Runtime: bestanden.
+- Browser-Entwicklungsansicht gegen den Windows-Server mit Testdaten: Menü öffnet sich unter der Zeile, „Ordnernamen verwenden“ ist bei unverändertem Namen gesperrt, Umbenennen per Dialog, Entfernen nennt die Zahl der Chats und blendet das Projekt aus, Neu-Zuordnen eines verschobenen Ordners übernimmt Pfad und Namen. Bestätigung und Ordnerwahl liefen dabei über die Browser-Ersatzwege (`confirm`, `prompt`), nicht über die Electron-Dialoge.
+
+### Auf Windows offen
+
+- Rechtsklick und Kontextmenü-Taste in der installierten App, Electron-Ordnerdialog beim Neu-Zuordnen, native Bestätigung beim Entfernen. Ablauf in [WINDOWS-TESTPLAN.md](WINDOWS-TESTPLAN.md), Abschnitt „Projekte aufräumen“.
+- Pfade mit Laufwerksbuchstaben, Leerzeichen und Umlauten beim Neu-Zuordnen.
+
 ## MCP-OAuth · 12.10.2026
 
 OAuth-Anmeldung für HTTP/SSE-MCP-Server wie auf dem Mac (Engine-Module `mcp-oauth.mjs` und `mcp-credentials.mjs`, `capabilities.mjs`, Routen in `server.mjs`), Oberfläche in `public/features.js`. Anmeldung in OMPs `agent.db` (Schema 8), erweiterte Anmeldung, `mcp-remote`-Umstellung und Verbindungstest mit echten Zugangsdaten („Anmeldung erforderlich“ bei 401/403) mit Übernahme erneuerter Tokens. OMP wird nach der Anmeldung neu gestartet: Chats im Leerlauf sofort, beschäftigte nach ihrer Arbeit; unter Windows wartet der Neustart zusätzlich auf eingereihte Nachrichten.

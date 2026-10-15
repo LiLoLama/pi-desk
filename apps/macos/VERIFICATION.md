@@ -181,3 +181,18 @@ OAuth-Anmeldung für HTTP/SSE-MCP-Server: Engine-Module `mcp-oauth.mjs` und `mcp
 
 - Die SwiftUI-Oberfläche der MCP-Anmeldung wurde nicht gestartet und nicht bedient (Handprüfung auf dem Mac steht aus).
 - Eine echte Anmeldung gegen den AITI-MCP-Server steht aus.
+
+## Projekte umbenennen, entfernen, neu zuordnen · 15.10.2026
+
+Rückmeldung von Ulrike: Projekte ließen sich weder umbenennen noch aus der Liste entfernen. Neu ist die Route `/api/project-state` mit `rename`, `reset-name`, `remove` und `relink` sowie ein Kontextmenü an der Projektzeile der Seitenleiste. „Entfernen“ legt die Chats des Projekts (auch archivierte) in den Papierkorb und markiert das Projekt mit `removedAt`. Den Ordner fasst Pi Desk nicht an. Holt man einen Chat zurück oder öffnet man denselben Ordner erneut, kommt das Projekt wieder. Erst wenn der Papierkorb geleert wird oder der letzte Chat endgültig gelöscht ist, verschwindet das Projekt ganz.
+
+### Nachgewiesen
+
+- `npm test` in `apps/macos`: 69 von 69 Tests bestanden. Davon fünf neu in `test/project-state.test.mjs`: Umbenennen und Zurücksetzen auf den Ordnernamen; Entfernen samt Papierkorb, Ordner bleibt, keine neuen Chats im entfernten Projekt; Wiederherstellen und erneutes Öffnen nehmen dasselbe Projekt wieder auf; Leeren des Papierkorbs verwirft entfernte Projekte; Neu-Zuordnen eines verschobenen Ordners mit erhaltenem eigenem Namen, Ablehnen eines schon geöffneten Ordners und Zusammenführen mit einem entfernten Projekt desselben Ordners.
+- `python3 native/build.py` ohne Fehler.
+- Separater `PI_DESK_UI_TEST`-Build mit `/private/tmp/pi-desk-native-e2e`, per Rechtsklick und Tastatur bedient: Die Seitenleiste blendet ein entferntes Projekt aus und zeigt eigene Namen. Das Kontextmenü zeigt „Umbenennen …“, „Ordnernamen verwenden“, „Ordner neu zuordnen …“, „Neue Aufgabe“ und „Aus Pi Desk entfernen …“. Der Entfernen-Dialog nennt die Anzahl der Chats; nach dem Bestätigen standen Projekt und Chat im Papierkorb, der Ordner war unverändert. Umbenennen änderte nur den Namen. Neu-Zuordnen über den nativen Ordnerdialog auf einen verschobenen Ordner übernahm den neuen Pfad und behielt den eigenen Namen.
+
+### Offen
+
+- Wiederherstellen eines Chats aus „Archiv & Papierkorb“ in der Oberfläche (nur per Servertest belegt).
+- Neu-Zuordnen, während ein Chat des Projekts geöffnet ist und OMP schon läuft (der Server beendet den Worker im Leerlauf; in der Oberfläche nicht durchgespielt).

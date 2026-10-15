@@ -94,3 +94,14 @@ Die bisherigen automatisierten Prüfungen liefen unter macOS. Diese Liste dient 
 4. „Testen“ → verbunden mit Werkzeugen. Neuer Chat: MCP-Werkzeuge werden geladen.
 5. Pi Desk neu starten → weiterhin „Angemeldet“.
 6. „Abmelden“ → Status weg, „Testen“ → „Anmeldung erforderlich“.
+
+## Projekte aufräumen (ab nächster Version)
+
+1. Zwei Testordner anlegen (einer mit Leerzeichen und Umlaut, z. B. `C:\Temp\Übung Projekt`), beide über „Projekt öffnen“ hinzufügen und je einen Chat anlegen.
+2. Rechtsklick auf eine Projektzeile → Menü erscheint unter der Zeile. Dasselbe mit Tab auf die Zeile und Kontextmenü-Taste (oder Umschalt+F10).
+3. „Projekt umbenennen …“ → neuer Name erscheint in der Seitenleiste und oben in der Titelzeile. Der Ordner im Explorer heißt unverändert.
+4. „Ordnernamen verwenden“ → wieder der Ordnername. Bei unverändertem Namen ist der Eintrag gesperrt.
+5. Pi Desk schließen, den zweiten Ordner im Explorer umbenennen, Pi Desk starten, den Chat öffnen → Meldung „Projektordner nicht gefunden …“ mit Hinweis auf „Ordner neu zuordnen …“. Dort den umbenannten Ordner wählen → Chat lässt sich wieder benutzen.
+6. „Aus Pi Desk entfernen …“ → Windows-Bestätigung nennt die Zahl der Chats. Nach „Bestätigen“ ist das Projekt weg, die Chats liegen unter Einstellungen → Archiv im Papierkorb, der Ordner im Explorer ist unverändert.
+7. Einen dieser Chats wiederherstellen → Projekt erscheint wieder. Erneut entfernen, dann denselben Ordner über „Projekt öffnen“ öffnen → dasselbe Projekt kommt zurück (kein zweiter Eintrag).
+8. Projekt entfernen und Papierkorb leeren → Projekt bleibt verschwunden, auch nach Neustart.

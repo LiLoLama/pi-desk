@@ -15,10 +15,13 @@ struct Project: Identifiable {
   let id: String
   let name: String
   let path: String
+  let removed: Bool
+  var folderName: String { URL(fileURLWithPath: path).lastPathComponent }
   init(_ o: Object) {
     id = string(o, "id")
     name = string(o, "name")
     path = string(o, "path")
+    removed = o["removedAt"] is String
   }
 }
 struct DeskTask: Identifiable {
@@ -919,6 +922,36 @@ struct UIRequest: Identifiable {
       }
     }
   }
+  func changeProjectState(_ id: String, action: String, extra: Object = [:]) async throws {
+    var body: Object = ["projectId": id, "action": action]
+    body.merge(extra) { _, new in new }
+    _ = try await api("project-state", body: body)
+    let wasSelected = action == "remove" && task?.projectID == id
+    if wasSelected {
+      if let current = selected { drafts[current] = (draft, context, images) }
+      clearSelection()
+    }
+    try await refresh()
+    if wasSelected, let next = tasks.first(where: { $0.active }) { await select(next.id) }
+    if action == "relink", let current = selected, task?.projectID == id { await select(current) }
+  }
+  func relinkProject(_ project: Project) {
+    let panel = NSOpenPanel()
+    panel.canChooseFiles = false
+    panel.canChooseDirectories = true
+    panel.canCreateDirectories = false
+    panel.directoryURL = URL(fileURLWithPath: project.path).deletingLastPathComponent()
+    panel.prompt = "Zuordnen"
+    panel.message = "Wähle den neuen Ort des Ordners für „\(project.name)“. Die Chats bleiben erhalten."
+    panel.begin { [weak self] result in
+      guard result == .OK, let url = panel.url else { return }
+      Task { @MainActor in
+        self?.run {
+          try await self?.changeProjectState(project.id, action: "relink", extra: ["path": url.path])
+        }
+      }
+    }
+  }
   func chooseProject() {
     let panel = NSOpenPanel()
     panel.canChooseFiles = false
@@ -1802,6 +1835,9 @@ struct MainView: View {
   @State private var columns = NavigationSplitViewVisibility.all
   @State private var searchOpen = false
   @State private var trashTarget: DeskTask?
+  @State private var projectRenameTarget: Project?
+  @State private var projectName = ""
+  @State private var removeTarget: Project?
   var body: some View {
     NavigationSplitView(columnVisibility: $columns) {
       VStack(alignment: .leading, spacing: 0) {
@@ -1824,7 +1860,11 @@ struct MainView: View {
               title = task.title
               rename = true
             }
-          }, trash: { task in trashTarget = task })
+          }, trash: { task in trashTarget = task },
+          renameProject: { project in
+            projectName = project.name
+            projectRenameTarget = project
+          }, removeProject: { project in removeTarget = project })
         Button {
           desk.showLibrary = true
         } label: {
@@ -1938,6 +1978,51 @@ struct MainView: View {
         Text(
           "Der Chat lässt sich im Papierkorb wiederherstellen. Dateien im Projekt werden nicht gelöscht."
         )
+      }
+      .alert(
+        "Projekt aus Pi Desk entfernen?",
+        isPresented: Binding(get: { removeTarget != nil }, set: { if !$0 { removeTarget = nil } }),
+        presenting: removeTarget
+      ) { target in
+        Button("Abbrechen", role: .cancel) { removeTarget = nil }
+        Button("Entfernen", role: .destructive) {
+          desk.run { try await desk.changeProjectState(target.id, action: "remove") }
+          removeTarget = nil
+        }
+      } message: { target in
+        let count = desk.tasks.filter { $0.projectID == target.id && !$0.deleted }.count
+        Text(
+          (count == 0
+            ? "„\(target.name)“ verschwindet aus der Liste."
+            : count == 1
+              ? "Der Chat in „\(target.name)“ kommt in den Papierkorb."
+              : "Die \(count) Chats in „\(target.name)“ kommen in den Papierkorb.")
+            + " Der Ordner auf deinem Mac bleibt unverändert. Ein wiederhergestellter Chat bringt das Projekt zurück."
+        )
+      }
+      .sheet(
+        isPresented: Binding(
+          get: { projectRenameTarget != nil }, set: { if !$0 { projectRenameTarget = nil } })
+      ) {
+        VStack(alignment: .leading, spacing: 20) {
+          Text("Projekt umbenennen").font(.title3)
+          TextField("Name", text: $projectName)
+          Text("Nur der Name in Pi Desk ändert sich. Ordner: \(projectRenameTarget?.path ?? "")")
+            .font(.caption).foregroundStyle(.secondary).lineLimit(2).truncationMode(.middle)
+          HStack {
+            Button("Abbrechen") { projectRenameTarget = nil }.keyboardShortcut(.cancelAction)
+            Spacer()
+            Button("Speichern") {
+              guard let target = projectRenameTarget else { return }
+              desk.run {
+                try await desk.changeProjectState(
+                  target.id, action: "rename", extra: ["name": projectName])
+                projectRenameTarget = nil
+              }
+            }.keyboardShortcut(.defaultAction)
+              .disabled(projectName.trimmingCharacters(in: .whitespaces).isEmpty)
+          }
+        }.padding(28).frame(width: 380)
       }
       .sheet(isPresented: $desk.showLogin) { LoginView(desk: desk) }
       .sheet(isPresented: $rename) {

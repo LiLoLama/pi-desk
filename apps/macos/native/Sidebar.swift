@@ -5,6 +5,8 @@ struct ProjectTree: View {
   @ObservedObject var desk: Desk
   let rename: (DeskTask) -> Void
   let trash: (DeskTask) -> Void
+  let renameProject: (Project) -> Void
+  let removeProject: (Project) -> Void
   @AppStorage("collapsedProjects") private var collapsedJSON = "[]"
   @AppStorage("reduceAnimations") private var reduceAnimations = false
   @Environment(\.accessibilityReduceMotion) private var systemReduceMotion
@@ -23,7 +25,7 @@ struct ProjectTree: View {
   var body: some View {
     ScrollView {
       LazyVStack(alignment: .leading, spacing: 14) {
-        ForEach(desk.projects) { project in
+        ForEach(desk.projects.filter { !$0.removed }) { project in
           let expanded = !collapsed.contains(project.id)
           let tasks = desk.tasks.filter { $0.projectID == project.id && $0.active }
           VStack(alignment: .leading, spacing: 3) {
@@ -55,6 +57,24 @@ struct ProjectTree: View {
                 .accessibilityLabel(project.name)
                 .accessibilityValue(expanded ? "Ausgeklappt" : "Eingeklappt")
                 .accessibilityHint("Projekt ein- oder ausklappen")
+                .contextMenu {
+                  Button("Umbenennen …") { renameProject(project) }
+                  Button("Ordnernamen verwenden") {
+                    desk.run { try await desk.changeProjectState(project.id, action: "reset-name") }
+                  }.disabled(project.name == project.folderName)
+                  Button("Ordner neu zuordnen …", systemImage: "folder.badge.gearshape") {
+                    desk.relinkProject(project)
+                  }.disabled(desk.tasks.contains { $0.projectID == project.id && $0.busy })
+                  Divider()
+                  Button("Neue Aufgabe") {
+                    setExpanded(true, project: project.id)
+                    desk.run { try await desk.newTask(projectID: project.id) }
+                  }
+                  Divider()
+                  Button("Aus Pi Desk entfernen …", systemImage: "minus.circle", role: .destructive) {
+                    removeProject(project)
+                  }.disabled(desk.tasks.contains { $0.projectID == project.id && $0.busy })
+                }
               Button {
                 setExpanded(true, project: project.id)
                 desk.run { try await desk.newTask(projectID: project.id) }

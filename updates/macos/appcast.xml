@@ -3,6 +3,19 @@
   <channel>
     <title>Pi Desk für macOS</title>
     <item>
+      <title>Pi Desk 0.6.0</title>
+      <pubDate>Thu, 15 Oct 2026 14:28:06 GMT</pubDate>
+      <sparkle:version>600</sparkle:version>
+      <sparkle:shortVersionString>0.6.0</sparkle:shortVersionString>
+      <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+      <description><![CDATA[## 0.6.0 – 15.10.2026
+
+- Projekte lassen sich per Rechtsklick umbenennen. Nur der Name in Pi Desk ändert sich, der Ordner bleibt, wie er ist. „Ordnernamen verwenden“ stellt den ursprünglichen Namen wieder her.
+- „Aus Pi Desk entfernen …“ räumt ein Projekt aus der Liste. Seine Chats kommen in den Papierkorb, der Ordner auf deinem Mac bleibt unverändert. Wer einen dieser Chats wiederherstellt oder den Ordner erneut öffnet, bekommt das Projekt zurück.
+- Wurde ein Projektordner verschoben oder umbenannt, ordnet „Ordner neu zuordnen …“ ihn wieder zu. Die Chats bleiben erhalten, statt dass ein zweites Projekt entsteht.]]></description>
+      <enclosure url="https://github.com/LiLoLama/pi-desk/releases/download/macos-v0.6.0/Pi-Desk-0.6.0-apple-silicon.dmg" length="157090159" type="application/octet-stream" sparkle:edSignature="oBltqGE+kk6jz5Y2O0B5u/GfpxI5paH9IVvAsJKPucU/titf1otTPr+Zf9VHfm7qZ7BbzErB/L+dwnTMwcV/DQ=="/>
+    </item>
+    <item>
       <title>Pi Desk 0.5.0</title>
       <pubDate>Tue, 13 Oct 2026 07:41:21 GMT</pubDate>
       <sparkle:version>500</sparkle:version>

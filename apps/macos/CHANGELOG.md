@@ -1,5 +1,11 @@
 # Pi Desk für macOS – Änderungen
 
+## 0.6.0 – 15.10.2026
+
+- Projekte lassen sich per Rechtsklick umbenennen. Nur der Name in Pi Desk ändert sich, der Ordner bleibt, wie er ist. „Ordnernamen verwenden“ stellt den ursprünglichen Namen wieder her.
+- „Aus Pi Desk entfernen …“ räumt ein Projekt aus der Liste. Seine Chats kommen in den Papierkorb, der Ordner auf deinem Mac bleibt unverändert. Wer einen dieser Chats wiederherstellt oder den Ordner erneut öffnet, bekommt das Projekt zurück.
+- Wurde ein Projektordner verschoben oder umbenannt, ordnet „Ordner neu zuordnen …“ ihn wieder zu. Die Chats bleiben erhalten, statt dass ein zweites Projekt entsteht.
+
 ## 0.5.0 – 13.10.2026
 
 - MCP-Server mit OAuth-Anmeldung (zum Beispiel der AITI-MCP) lassen sich jetzt verbinden: In den Einstellungen unter „MCP“ auf „Anmelden“ klicken und im Browser freigeben. Pi Desk verlängert den Zugang danach selbst.
